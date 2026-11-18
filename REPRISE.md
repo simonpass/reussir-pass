@@ -29,7 +29,7 @@
 3. Ensuite, désactiver ou supprimer le site Netlify (issue #2), avec l'accord de Simon.
 4. En attente :
    - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
-   - mail au Tutorat Lyon-Est en pause ;
+   - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`), attendre la réponse ;
    - idées d'abonnement payant et d'application mobile.
 
 ## Méthode de travail
