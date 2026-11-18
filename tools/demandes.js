@@ -1,62 +1,61 @@
 #!/usr/bin/env node
-/* Demandes personnalisées envoyées depuis le site (rubrique « Mes demandes »).
-   Les demandes arrivent dans le formulaire Netlify « demande » du site medecine-facile (id 217e40f1-…).
+/* Demandes personnalisées (rubrique « Mes demandes » du site), rangées dans Supabase (table public.demandes).
+   Clé de service dans tools/.supabase.json (jamais versionnée) : { "url": "https://xxx.supabase.co", "service": "…" }
    Utilisation (depuis la racine du dépôt) :
-     node tools/demandes.js list          télécharge les demandes en attente dans .demandes/<id>/ (non versionné)
-     node tools/demandes.js done <id>     supprime la demande sur Netlify et le dossier local, une fois le résultat publié
-   Le résultat se publie dans site/demandes/<id>.json (voir REPRISE.md, « Traiter les demandes »). */
+     node tools/demandes.js list                     télécharge les demandes en attente dans .demandes/<id>/
+     node tools/demandes.js publish <id> <fichier>   enregistre le résultat (JSON) : visible seulement par l'auteur de la demande
+     node tools/demandes.js done <id>                efface le texte et la photo envoyés (le résultat reste dans le compte)
+   Formats de résultat : voir REPRISE.md, « Traiter les demandes ». */
 'use strict';
-const fs = require('fs'), path = require('path'), os = require('os');
-const SITE = '217e40f1-6bde-4f65-8ad8-1c67db02ba9f';
+const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..'), DIR = path.join(ROOT, '.demandes');
 
-function token() {
-  if (process.env.NETLIFY_AUTH_TOKEN) return process.env.NETLIFY_AUTH_TOKEN;
-  const base = process.env.APPDATA || path.join(os.homedir(), '.config');
-  for (const f of [path.join(base, 'netlify', 'Config', 'config.json'), path.join(os.homedir(), '.netlify', 'config.json')]) {
-    try { const c = JSON.parse(fs.readFileSync(f, 'utf8')); const u = c.users && c.users[c.userId]; if (u && u.auth && u.auth.token) return u.auth.token; } catch (e) {}
-  }
-  throw new Error('Jeton Netlify introuvable : lancez « npx netlify-cli login ».');
+function cfg() {
+  const f = path.join(__dirname, '.supabase.json');
+  let c; try { c = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { throw new Error('Fichier ' + f + ' manquant ou illisible.'); }
+  if (!c.url || !c.service || /COLLER/.test(c.service)) throw new Error('Clé de service absente dans ' + f + '.');
+  return c;
 }
-async function api(p, opt = {}) {
-  const r = await fetch('https://api.netlify.com/api/v1' + p, Object.assign({}, opt, { headers: { Authorization: 'Bearer ' + token() } }));
-  if (!r.ok) throw new Error(`Netlify ${r.status} sur ${p}`);
-  return r.status === 204 ? null : r.json();
+async function rest(p, opt = {}) {
+  const c = cfg();
+  const r = await fetch(c.url + p, Object.assign({}, opt, { headers: Object.assign({ apikey: c.service, Authorization: 'Bearer ' + c.service, 'Content-Type': 'application/json' }, opt.headers || {}) }));
+  if (!r.ok) throw new Error(`Supabase ${r.status} sur ${p} : ${await r.text()}`);
+  const t = await r.text(); return t ? JSON.parse(t) : null;
 }
-async function formId() {
-  const forms = await api(`/sites/${SITE}/forms`);
-  const f = forms.find(x => x.name === 'demande'); if (!f) throw new Error('Formulaire « demande » introuvable.');
-  return f.id;
-}
-async function submissions() { return api(`/forms/${await formId()}/submissions?per_page=100`); }
 
 async function list() {
-  const subs = await submissions();
-  const published = new Set(fs.existsSync(path.join(ROOT, 'site', 'demandes')) ? fs.readdirSync(path.join(ROOT, 'site', 'demandes')).map(f => f.replace(/\.json$/, '')) : []);
+  const rows = await rest(`/rest/v1/demandes?status=eq.envoy%C3%A9e&select=*,profiles(prenom,nom,email)&order=created_at`);
   fs.mkdirSync(DIR, { recursive: true });
-  let n = 0;
-  for (const s of subs) {
-    const d = s.data || {}; if (!d.id || d.piege) continue;
+  for (const d of rows) {
     const dir = path.join(DIR, d.id); fs.mkdirSync(dir, { recursive: true });
-    const meta = { id: d.id, submission: s.id, recue: s.created_at, type: d.type, ue: d.ue, titre: d.titre, nom: d.nom, fichier: d.fichier, consigne: d.consigne, publiee: published.has(d.id) };
+    const meta = { id: d.id, recue: d.created_at, type: d.type, ue: d.ue, titre: d.titre, fichier: d.fichier, consigne: d.consigne, auteur: d.profiles ? `${d.profiles.prenom} ${d.profiles.nom}` : '' };
     fs.writeFileSync(path.join(dir, 'demande.json'), JSON.stringify(meta, null, 2));
     fs.writeFileSync(path.join(dir, 'texte.txt'), d.texte || '');
-    const img = d.image && (d.image.url || d.image);
-    if (img && typeof img === 'string' && img.startsWith('http')) {
-      const r = await fetch(img); if (r.ok) fs.writeFileSync(path.join(dir, 'image.jpg'), Buffer.from(await r.arrayBuffer()));
+    if (d.image_path) {
+      const c = cfg(); const r = await fetch(`${c.url}/storage/v1/object/demandes/${d.image_path}`, { headers: { apikey: c.service, Authorization: 'Bearer ' + c.service } });
+      if (r.ok) fs.writeFileSync(path.join(dir, 'image.jpg'), Buffer.from(await r.arrayBuffer()));
     }
-    n++;
-    console.log(`${meta.publiee ? '[déjà publiée] ' : ''}${d.id}  ${d.type}  ${d.ue || '-'}  ${d.fichier || ''}  (${(d.texte || '').length} car.${img ? ', photo' : ''})\n    « ${d.consigne} »`);
+    console.log(`${d.id}  ${d.type}  ${d.ue || '-'}  ${d.fichier || ''}  (${(d.texte || '').length} car.${d.image_path ? ', photo' : ''})\n    « ${d.consigne} »`);
   }
-  console.log(n ? `\n${n} demande(s) dans ${DIR}` : 'Aucune demande en attente.');
+  console.log(rows.length ? `\n${rows.length} demande(s) dans ${DIR}` : 'Aucune demande en attente.');
+}
+async function publish(id, file) {
+  if (!id || !file) throw new Error('Usage : node tools/demandes.js publish <id> <fichier.json>');
+  const result = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (!result.cards && !result.exam && !result.fiche && !result.message) throw new Error('Résultat vide (cards, exam, fiche ou message attendu).');
+  const r = await rest(`/rest/v1/demandes?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ result, status: 'prête', ready_at: new Date().toISOString() }) });
+  if (!r || !r.length) throw new Error('Demande introuvable : ' + id);
+  console.log(`Résultat publié pour ${id} : la personne le recevra à sa prochaine ouverture du site.`);
 }
 async function done(id) {
   if (!id) throw new Error('Usage : node tools/demandes.js done <id>');
-  if (!fs.existsSync(path.join(ROOT, 'site', 'demandes', id + '.json'))) throw new Error('Le résultat site/demandes/' + id + '.json n’existe pas encore.');
-  const s = (await submissions()).filter(x => x.data && x.data.id === id);
-  for (const x of s) await api(`/submissions/${x.id}`, { method: 'DELETE' });
+  const [d] = await rest(`/rest/v1/demandes?id=eq.${encodeURIComponent(id)}&select=status,image_path`);
+  if (!d) throw new Error('Demande introuvable : ' + id);
+  if (d.status !== 'prête') throw new Error('Publiez d’abord le résultat (publish).');
+  if (d.image_path) { const c = cfg(); await fetch(`${c.url}/storage/v1/object/demandes/${d.image_path}`, { method: 'DELETE', headers: { apikey: c.service, Authorization: 'Bearer ' + c.service } }); }
+  await rest(`/rest/v1/demandes?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ texte: null, image_path: null }) });
   fs.rmSync(path.join(DIR, id), { recursive: true, force: true });
-  console.log(`Demande ${id} close (${s.length} envoi(s) supprimé(s) sur Netlify).`);
+  console.log(`Demande ${id} close : texte et photo effacés, résultat conservé dans le compte de la personne.`);
 }
-const [cmd, arg] = process.argv.slice(2);
-(cmd === 'list' ? list() : cmd === 'done' ? done(arg) : Promise.reject(new Error('Commandes : list | done <id>'))).catch(e => { console.error(e.message || e); process.exit(1); });
+const [cmd, a, b] = process.argv.slice(2);
+({ list, publish, done }[cmd] || (() => Promise.reject(new Error('Commandes : list | publish <id> <fichier> | done <id>'))))(a, b).catch(e => { console.error(e.message || e); process.exit(1); });

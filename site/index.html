@@ -775,6 +775,12 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .cal-day.sel { box-shadow: inset 0 0 0 1.5px var(--brand); }
 .plan-item { border-left-width: 3px; }
 
+/* compte */
+.drawer-acc { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; margin-top: 8px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--fg); font-weight: 600; text-align: left; }
+.drawer-acc svg { width: 24px; height: 24px; color: var(--brand); flex: none; } .drawer-acc small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.acc .plan-form { max-width: 560px; }
+.acc-alt { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.linkbtn { background: none; border: 0; padding: 6px 0; color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 /* demandes */
 .impask { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; justify-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
 .impask div { display: grid; gap: 2px; flex: 1 1 280px; } .impask span { color: var(--muted); font-size: 14.5px; }
@@ -827,6 +833,8 @@ window.__ld = (n, t) => { const f = document.getElementById('splashFill'), s = d
 <script>__ld(90, 'Chargement des coupes…')</script>
 <script src="histo.js"></script>
 <script src="import.js"></script>
+<script src="config.js"></script>
+<script src="compte.js"></script>
 <script>__ld(100, 'Presque prêt…')</script>
 <script>
 (() => {
@@ -841,7 +849,7 @@ const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const INFO = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="11"/><path d="M11 10h2v8h-2zM11 6h2v2h-2z" fill="var(--brand)"/></svg>';
 const store = {
   get(k, d) { try { const v = localStorage.getItem('ue4:' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('ue4:' + k, JSON.stringify(v)); } catch (e) {} },
+  set(k, v) { try { localStorage.setItem('ue4:' + k, JSON.stringify(v)); } catch (e) {} if (window.Compte && window.Compte.user) window.Compte.push(); },
   del(k) { try { localStorage.removeItem('ue4:' + k); } catch (e) {} }
 };
 const app = $('#app');
@@ -1199,9 +1207,10 @@ function navOpen() {
   drawer.innerHTML = `<div class="drawer-scrim"></div><div class="drawer-panel" role="dialog" aria-label="Menu">
     <div class="drawer-head"><div class="splash-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h17a9 9 0 0 1 0 18H18v12"/><path d="M18 9v18"/><path d="M30 33l4 4 8-9"/></svg></div><div><b>Réussir PASS</b><small>Tutorat Lyon-Est</small></div></div>
     <nav>${NAV.map(([k, t, s, ic]) => `<button data-nav="${k}" class="${k === view ? 'on' : ''}" aria-current="${k === view ? 'page' : 'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic}</svg><span>${esc(t)}<small>${esc(s)}</small></span>${k === 'fc' && due ? `<i class="badge">${due}</i>` : ''}</button>`).join('')}</nav>
+    ${window.Compte && window.Compte.on ? `<button class="drawer-acc" data-nav="compte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>${esc(window.Compte.label())}<small>${window.Compte.user ? 'Progression synchronisée' : 'Créer un compte ou se connecter'}</small></span></button>` : ''}
     <div class="drawer-foot">reussir-pass.fr</div></div>`;
   drawer.querySelector('.drawer-scrim').onclick = navClose;
-  drawer.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { const v = b.dataset.nav; navClose(); if (v !== view) { view = v; store.set('view', view); } home(); });
+  drawer.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { const v = b.dataset.nav; navClose(); if (v === 'compte') { if (window.Compte) window.Compte.open(); return; } if (v !== view) { view = v; store.set('view', view); } home(); });
   drawer.removeAttribute('aria-hidden'); $('#navBtn').setAttribute('aria-expanded', 'true');
   void drawer.offsetWidth; drawer.classList.add('open');
   setTimeout(() => { const on = drawer.querySelector('.on') || drawer.querySelector('[data-nav]'); on && on.focus({ preventScroll: true }); }, 50);
@@ -1211,22 +1220,20 @@ $('#navBtn').onclick = () => drawer.classList.contains('open') ? navClose() : na
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawer.classList.contains('open')) navClose(); });
 
 /* ---------- Mes demandes : document + consigne envoyés, traités à la main, résultat récupéré dans demandes/<id>.json ---------- */
-const DEM_URL = 'https://medecine-facile.netlify.app/demande.html';
 const DEM_TYPES = { flashcards: 'Flashcards', qcm: 'QCM d’entraînement', fiche: 'Fiche de synthèse', autre: 'Autre' };
 const DEM_HINT = { flashcards: 'ex. Fais-moi des flashcards sur les définitions et les dates importantes de ce cours.', qcm: 'ex. Fais-moi 20 QCM type concours sur ce chapitre, avec la correction de chaque item.', fiche: 'ex. Fais-moi une fiche de synthèse d’une page avec les points à retenir.', autre: 'Décrivez ce que vous voulez obtenir à partir de ce document.' };
 let DM = { type: 'flashcards', busy: false };
 const demAll = () => store.get('demandes', []);
 async function demPoll(silent) {
-  const L = demAll(), todo = L.filter(d => d.status !== 'prête');
-  if (!todo.length) return 0;
-  let n = 0;
-  for (const d of todo) {
-    try {
-      const r = await fetch('demandes/' + encodeURIComponent(d.id) + '.json', { cache: 'no-store' });
-      if (!r.ok) continue;
-      const res = await r.json(); await demApply(d, res); n++;
-    } catch (e) {}
+  if (!window.Compte || !window.Compte.user) return 0;
+  let rows = []; try { rows = await window.Compte.listDemandes(); } catch (e) { return 0; }
+  const L = demAll(); let n = 0, added = false;
+  for (const r of rows) {
+    let d = L.find(x => x.id === r.id);
+    if (!d) { d = { id: r.id, type: r.type, ue: r.ue || '', titre: r.titre || '', fichier: r.fichier || '', consigne: r.consigne, at: Date.parse(r.created_at), status: 'envoyée' }; L.push(d); added = true; }
+    if (r.status === 'prête' && d.status !== 'prête' && r.result) { try { await demApply(d, r.result); d.readyAt = Date.parse(r.ready_at) || Date.now(); n++; } catch (e) {} }
   }
+  if (added && !n) { store.set('demandes', L); if (view === 'dem' && !S && !FC) demHome(); }
   if (n) { store.set('demandes', L); if (!silent) {} toast(n > 1 ? n + ' demandes sont prêtes : ouvrez « Mes demandes ».' : 'Votre demande est prête : ouvrez « Mes demandes ».'); if (view === 'dem' && !S && !FC) demHome(); }
   return n;
 }
@@ -1245,18 +1252,17 @@ function demHome() {
   app.innerHTML = `<div class="home wrap">
     <div class="hero"><span class="eyebrow">Sur mesure</span><h2>Mes <em>demandes</em></h2>
       <p>Envoyez un cours ou un document avec votre consigne : flashcards, QCM d’entraînement, fiche de synthèse… La demande est traitée sous 24 à 48 h et le résultat s’ajoute tout seul au site.</p></div>
-    <section class="group"><h3>Nouvelle demande</h3>
+    ${!window.Compte || !window.Compte.on ? '<p class="plan-empty">Les demandes personnalisées arrivent bientôt.</p>' : !window.Compte.user ? `<section class="group"><h3>Nouvelle demande</h3><div class="impask"><div><b>Connectez-vous pour envoyer une demande</b><span>Les demandes et leurs réponses sont rangées dans votre compte : vous seul y avez accès.</span></div><button class="btn orange" id="demLogin">Se connecter ou créer un compte</button></div></section>` : `<section class="group"><h3>Nouvelle demande</h3>
       <form class="plan-form dem-form" id="demForm">
         <label>Document<input type="file" name="doc" accept=".pdf,.docx,.txt,image/*,application/pdf" required></label>
         <label>Je veux obtenir<div class="kinds">${Object.entries(DEM_TYPES).map(([k, v]) => `<button type="button" data-dt="${k}" class="${k === DM.type ? 'on' : ''}">${esc(v)}</button>`).join('')}</div></label>
         <label>Votre demande<textarea name="consigne" rows="4" maxlength="2000" required placeholder="${esc(DEM_HINT[DM.type])}"></textarea></label>
         <div class="row">
           <label>UE<select name="ue"><option value="">—</option>${UES.map(u => `<option ${u === ue ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label>
-          <label>Prénom (facultatif)<input name="nom" maxlength="40"></label>
         </div>
         <div class="hgrade"><button class="btn orange" type="submit" id="demSend">Envoyer la demande</button><span class="note-src" id="demStat"></span></div>
-        <small class="note-src">Le texte du document et votre consigne sont envoyés pour être traités ; rien d’autre ne quitte cet appareil.</small>
-      </form></section>
+        <small class="note-src">Le texte du document et votre consigne sont rangés dans votre compte pour être traités ; la réponse n’est visible que par vous.</small>
+      </form></section>`}
     <section class="group"><h3>Suivi</h3>${L.length ? `<div class="dem-list">${L.map(d => `<div class="dem-item ${d.status === 'prête' ? 'ready' : ''}">
         <div class="dem-top"><b>${esc(DEM_TYPES[d.type] || d.type)}</b><span class="dem-st">${d.status === 'prête' ? 'Prête' : 'En attente'}</span></div>
         <div class="dem-c">« ${esc(d.consigne)} »</div>
@@ -1266,14 +1272,15 @@ function demHome() {
       </div>`).join('')}</div>` : '<p class="plan-empty">Aucune demande pour l’instant.</p>'}
       ${L.some(d => d.status !== 'prête') ? '<div><button class="btn" id="demCheck">Vérifier maintenant</button></div>' : ''}</section>
   </div>`;
+  const lg = $('#demLogin'); if (lg) lg.onclick = () => window.Compte.open();
   const f = $('#demForm');
-  f.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { DM.type = b.dataset.dt; f.querySelectorAll('[data-dt]').forEach(x => x.classList.toggle('on', x === b)); f.consigne.placeholder = DEM_HINT[DM.type]; });
-  f.onsubmit = e => { e.preventDefault(); demSend(f); };
+  if (f) f.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { DM.type = b.dataset.dt; f.querySelectorAll('[data-dt]').forEach(x => x.classList.toggle('on', x === b)); f.consigne.placeholder = DEM_HINT[DM.type]; });
+  if (f) f.onsubmit = e => { e.preventDefault(); demSend(f); };
   const ck = $('#demCheck'); if (ck) ck.onclick = async () => { ck.disabled = true; ck.textContent = 'Vérification…'; const n = await demPoll(); if (!n) { ck.disabled = false; ck.textContent = 'Vérifier maintenant'; toast('Pas encore prête : revenez un peu plus tard.'); } };
   app.querySelectorAll('[data-ddeck]').forEach(b => b.onclick = () => { const d = store.get('decks', {})[b.dataset.ddeck]; fcStart(d.cards.map((c, k) => 'p:' + d.id + '#' + k), d.title); });
   app.querySelectorAll('[data-dexam]').forEach(b => b.onclick = () => { const ex = byId[b.dataset.dexam]; if (!ex) return toast('QCM introuvable sur cet appareil.'); if (ex.ue && UES.includes(ex.ue)) { ue = ex.ue; store.set('ue', ue); } view = 'annales'; store.set('view', view); home(); });
   app.querySelectorAll('[data-dfiche]').forEach(b => b.onclick = () => demFiche(b.dataset.dfiche));
-  app.querySelectorAll('[data-ddel]').forEach(b => b.onclick = () => { if (!confirm('Retirer cette demande de la liste ? (les flashcards et fiches reçues restent disponibles)')) return; store.set('demandes', demAll().filter(d => d.id !== b.dataset.ddel)); demHome(); });
+  app.querySelectorAll('[data-ddel]').forEach(b => b.onclick = async () => { if (!confirm('Retirer cette demande ? (les flashcards, QCM et fiches reçus restent disponibles)')) return; try { await window.Compte.deleteDemande(b.dataset.ddel); } catch (e) {} store.set('demandes', demAll().filter(d => d.id !== b.dataset.ddel)); demHome(); });
   window.scrollTo(0, 0);
   demPoll(true);
 }
@@ -1291,12 +1298,8 @@ async function demSend(f) {
     else texte = await file.text();
     if (!image && texte.replace(/\s/g, '').length < 30) throw new Error('Le texte de ce document n’a pas pu être lu (document scanné ?). Essayez avec une photo des pages.');
     say('Envoi de la demande…');
-    const id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
-    const fd = new FormData();
-    fd.append('form-name', 'demande'); fd.append('id', id); fd.append('type', DM.type); fd.append('ue', f.ue.value); fd.append('titre', name.replace(/\.[^.]+$/, '')); fd.append('nom', f.nom.value.trim());
-    fd.append('consigne', consigne); fd.append('fichier', name); fd.append('texte', texte.slice(0, 400000));
-    if (image) fd.append('image', image, 'page.jpg');
-    await fetch(DEM_URL, { method: 'POST', body: fd, mode: 'no-cors' });
+    const row = await window.Compte.sendDemande({ type: DM.type, ue: f.ue.value, titre: name.replace(/\.[^.]+$/, ''), fichier: name, consigne, texte: texte.slice(0, 400000), image });
+    const id = row.id;
     const L = demAll(); L.push({ id, type: DM.type, ue: f.ue.value, titre: name.replace(/\.[^.]+$/, ''), fichier: name, consigne, at: Date.now(), status: 'envoyée' }); store.set('demandes', L);
     toast('Demande envoyée. Le résultat arrivera ici dès qu’elle sera traitée.');
     DM.busy = false; demHome();
@@ -1308,7 +1311,7 @@ function demFiche(id) {
   app.innerHTML = `<div class="wrap fiche"><article class="hans"><h4>${esc(F.title)}</h4>${(F.sections || []).map(sc => `${sc.titre ? `<h5>${esc(sc.titre)}</h5>` : ''}${(sc.points || []).length ? `<ul>${sc.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}${sc.texte ? `<p>${esc(sc.texte)}</p>` : ''}`).join('')}</article></div>`;
   window.scrollTo(0, 0);
 }
-setTimeout(() => demPoll(false), 2500);
+document.addEventListener('compte', () => demPoll(false));
 
 /* ---------- Coupes d'histologie : reconnaître la coupe (window.HISTO, textes mot pour mot des cours) ---------- */
 const HISTO_CH = ['Épithéliums : introduction', 'Épithéliums de revêtement', 'Épithéliums glandulaires', 'Tissu nerveux', 'Tissu musculaire'];
@@ -2037,7 +2040,7 @@ window.UE4 = {
   setTitle(t) { $('#barTitle').textContent = t; $('#homeBtn').hidden = false; $('#menuBtn').hidden = true; S = null; stopTimer(); }
 };
 home();
-if (window.UE4Import) Promise.resolve(window.UE4Import.init()).then(receiveTransfer);
+if (window.UE4Import) Promise.resolve(window.UE4Import.init()).then(receiveTransfer).then(() => window.Compte && window.Compte.init());
 })();
 </script>
 
