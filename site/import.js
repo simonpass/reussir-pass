@@ -219,8 +219,10 @@ Réponds UNIQUEMENT avec ce JSON :
         <input type="file" id="impFile" accept=".pdf,.docx,.txt,.json,image/*,application/pdf" multiple>
       </label>
       <div class="impstat" id="impStat" ${msg ? '' : 'hidden'}>${msg ? esc(msg) : ''}</div>
+      <div class="impask"><div><b>Envie d’autre chose ?</b><span>Flashcards, QCM d’entraînement, fiche de synthèse… Envoyez le document avec votre demande, elle est traitée et le résultat arrive tout seul dans le site.</span></div><button class="btn blue" id="impAsk" type="button">Faire une demande personnalisée</button></div>
       <div class="note-src">Conseil : les documents du tutorat (« Question 1 – … », items « A. … », puis « A VRAI … ») sont lus automatiquement, sans IA. Pour les autres formats ou les photos, Claude peut faire la transcription.</div>
     </div>`;
+    U.$('#impAsk').onclick = () => window.UE4Dem && window.UE4Dem.open();
     const inp = U.$('#impFile');
     inp.onchange = () => { if (inp.files.length) handleFiles([...inp.files]); };
     const drop = U.$('#drop');
@@ -502,5 +504,7 @@ Réponds UNIQUEMENT avec ce JSON :
       }
     } catch (e) {}
   }
-  window.UE4Import = { exportProgress, applyProgress, progressData, init, open, remove, exportAll };
+  /* pour les demandes personnalisées (index.html) : lecture des documents et ajout d'une épreuve rendue */
+  async function addExam(e) { const ex = Object.assign({}, e, { id: e.id && String(e.id).startsWith('imp-') ? e.id : 'imp-' + Date.now().toString(36), category: e.category || 'Mes documents', imported: true, createdAt: e.createdAt || Date.now(), questions: sanitize(e.questions || []) }); await putExam(ex); await refresh(); return ex.id; }
+  window.UE4Import = { exportProgress, applyProgress, progressData, init, open, remove, exportAll, addExam, readPdf, readDocx, readAsDataURL, shrink };
 })();

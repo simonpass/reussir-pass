@@ -685,7 +685,7 @@ details[open] > :not(summary) { animation: slidein .28s var(--ease-out) both; }
 .hobj p { margin: 6px 0 0; }
 .hgrade { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 .hgrade .hok { background: var(--ok); color: #fff; } .hgrade .hbad { background: var(--bad); color: #fff; }
-.hgrade .btn:not(.hok):not(.hbad):not(.blue) { background: var(--surface-2, var(--surface)); border: 1px solid var(--line); }
+.hgrade .btn:not(.hok):not(.hbad):not(.blue):not(.orange) { background: var(--surface-2, var(--surface)); border: 1px solid var(--line); }
 /* ===== Thème 3 : « cahier de révision » — papier, encre, serif pour les titres ; pas de dégradés ni de halos ===== */
 :root {
   --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -775,6 +775,21 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .cal-day.sel { box-shadow: inset 0 0 0 1.5px var(--brand); }
 .plan-item { border-left-width: 3px; }
 
+/* demandes */
+.impask { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; justify-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.impask div { display: grid; gap: 2px; flex: 1 1 280px; } .impask span { color: var(--muted); font-size: 14.5px; }
+.dem-form textarea { font: inherit; font-size: 16px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 10px; resize: vertical; }
+.dem-list { display: grid; gap: 10px; }
+.dem-item { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--mid); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 6px; }
+.dem-item.ready { border-left-color: var(--ok); }
+.dem-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.dem-st { font-size: 13px; font-weight: 600; color: var(--mid); } .dem-item.ready .dem-st { color: var(--ok); }
+.dem-c { font-style: italic; color: var(--fg); }
+.dem-msg { background: var(--surface-2); border-radius: 6px; padding: 8px 10px; font-size: 14.5px; }
+.pcard .precto { font-size: 19px; font-family: var(--serif); }
+.pcard .pverso { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); white-space: pre-wrap; animation: slidein .25s ease-out both; }
+.fiche { max-width: 820px; margin: 0 auto; padding-block: 18px 60px; }
+.fiche p { margin: 4px 0 8px; }
 /* animations plus discrètes */
 .cards > *, .home > * { animation-name: fadeIn; animation-duration: .3s; }
 #app > * { animation-duration: .25s; }
@@ -874,6 +889,7 @@ function home() {
   if (view === 'm3d') return m3dHome();
   if (view === 'histo') return histoHome();
   if (view === 'cal') return planHome();
+  if (view === 'dem') return demHome();
   $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
   $('#barTitle').textContent = `Annales ${ue}`;
   document.documentElement.dataset.ue = ue;
@@ -1078,6 +1094,7 @@ const NAV = [
   ['m3d', 'Modèles 3D', 'Embryologie, 4 semaines', '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/>'],
   ['histo', 'Coupes', 'Reconnaître la coupe', '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="2"/><circle cx="15" cy="14" r="2.5"/><circle cx="14.5" cy="7.5" r="1"/>'],
   ['fc', 'Flashcards', 'Répétition espacée', '<rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/>'],
+  ['dem', 'Mes demandes', 'Flashcards, QCM, fiches sur mesure', '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>'],
   ['cal', 'Planning', 'Calendrier de révision', '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/>']
 ];
 
@@ -1192,6 +1209,106 @@ function navOpen() {
 function navClose() { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); $('#navBtn').setAttribute('aria-expanded', 'false'); }
 $('#navBtn').onclick = () => drawer.classList.contains('open') ? navClose() : navOpen();
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawer.classList.contains('open')) navClose(); });
+
+/* ---------- Mes demandes : document + consigne envoyés, traités à la main, résultat récupéré dans demandes/<id>.json ---------- */
+const DEM_URL = 'https://medecine-facile.netlify.app/demande.html';
+const DEM_TYPES = { flashcards: 'Flashcards', qcm: 'QCM d’entraînement', fiche: 'Fiche de synthèse', autre: 'Autre' };
+const DEM_HINT = { flashcards: 'ex. Fais-moi des flashcards sur les définitions et les dates importantes de ce cours.', qcm: 'ex. Fais-moi 20 QCM type concours sur ce chapitre, avec la correction de chaque item.', fiche: 'ex. Fais-moi une fiche de synthèse d’une page avec les points à retenir.', autre: 'Décrivez ce que vous voulez obtenir à partir de ce document.' };
+let DM = { type: 'flashcards', busy: false };
+const demAll = () => store.get('demandes', []);
+async function demPoll(silent) {
+  const L = demAll(), todo = L.filter(d => d.status !== 'prête');
+  if (!todo.length) return 0;
+  let n = 0;
+  for (const d of todo) {
+    try {
+      const r = await fetch('demandes/' + encodeURIComponent(d.id) + '.json', { cache: 'no-store' });
+      if (!r.ok) continue;
+      const res = await r.json(); await demApply(d, res); n++;
+    } catch (e) {}
+  }
+  if (n) { store.set('demandes', L); if (!silent) {} toast(n > 1 ? n + ' demandes sont prêtes : ouvrez « Mes demandes ».' : 'Votre demande est prête : ouvrez « Mes demandes ».'); if (view === 'dem' && !S && !FC) demHome(); }
+  return n;
+}
+async function demApply(d, res) {
+  d.status = 'prête'; d.readyAt = Date.now(); d.kind = res.type || d.type; d.message = res.message || '';
+  const title = res.title || d.titre || DEM_TYPES[d.type];
+  if (res.cards && res.cards.length) { const D = store.get('decks', {}); D[d.id] = { id: d.id, title, ue: res.ue || d.ue || '', cards: res.cards.filter(c => c && c.recto && c.verso) }; store.set('decks', D); d.deck = d.id; }
+  if (res.fiche) { const F = store.get('fiches', {}); F[d.id] = { id: d.id, title, ue: res.ue || d.ue || '', sections: res.fiche.sections || [] }; store.set('fiches', F); d.fiche = d.id; }
+  if (res.exam && res.exam.questions && window.UE4Import && window.UE4Import.addExam) { d.exam = await window.UE4Import.addExam(Object.assign({ ue: res.ue || d.ue || ue, title, source: d.fichier || '' }, res.exam)); }
+}
+function demHome() {
+  $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
+  $('#barTitle').textContent = 'Mes demandes'; document.documentElement.dataset.ue = ue;
+  const L = demAll().slice().reverse(), decks = store.get('decks', {}), fiches = store.get('fiches', {});
+  const when = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  app.innerHTML = `<div class="home wrap">
+    <div class="hero"><span class="eyebrow">Sur mesure</span><h2>Mes <em>demandes</em></h2>
+      <p>Envoyez un cours ou un document avec votre consigne : flashcards, QCM d’entraînement, fiche de synthèse… La demande est traitée sous 24 à 48 h et le résultat s’ajoute tout seul au site.</p></div>
+    <section class="group"><h3>Nouvelle demande</h3>
+      <form class="plan-form dem-form" id="demForm">
+        <label>Document<input type="file" name="doc" accept=".pdf,.docx,.txt,image/*,application/pdf" required></label>
+        <label>Je veux obtenir<div class="kinds">${Object.entries(DEM_TYPES).map(([k, v]) => `<button type="button" data-dt="${k}" class="${k === DM.type ? 'on' : ''}">${esc(v)}</button>`).join('')}</div></label>
+        <label>Votre demande<textarea name="consigne" rows="4" maxlength="2000" required placeholder="${esc(DEM_HINT[DM.type])}"></textarea></label>
+        <div class="row">
+          <label>UE<select name="ue"><option value="">—</option>${UES.map(u => `<option ${u === ue ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label>
+          <label>Prénom (facultatif)<input name="nom" maxlength="40"></label>
+        </div>
+        <div class="hgrade"><button class="btn orange" type="submit" id="demSend">Envoyer la demande</button><span class="note-src" id="demStat"></span></div>
+        <small class="note-src">Le texte du document et votre consigne sont envoyés pour être traités ; rien d’autre ne quitte cet appareil.</small>
+      </form></section>
+    <section class="group"><h3>Suivi</h3>${L.length ? `<div class="dem-list">${L.map(d => `<div class="dem-item ${d.status === 'prête' ? 'ready' : ''}">
+        <div class="dem-top"><b>${esc(DEM_TYPES[d.type] || d.type)}</b><span class="dem-st">${d.status === 'prête' ? 'Prête' : 'En attente'}</span></div>
+        <div class="dem-c">« ${esc(d.consigne)} »</div>
+        <small class="note-src">${esc(d.fichier || '')} · envoyée le ${when(d.at)}${d.readyAt ? ' · prête le ' + when(d.readyAt) : ''}</small>
+        ${d.message ? `<div class="dem-msg">${esc(d.message)}</div>` : ''}
+        <div class="hgrade">${d.deck && decks[d.deck] ? `<button class="btn blue" data-ddeck="${esc(d.deck)}">Réviser les ${decks[d.deck].cards.length} flashcards</button>` : ''}${d.exam ? `<button class="btn blue" data-dexam="${esc(d.exam)}">Faire le QCM</button>` : ''}${d.fiche && fiches[d.fiche] ? `<button class="btn blue" data-dfiche="${esc(d.fiche)}">Lire la fiche</button>` : ''}<button class="btn" data-ddel="${esc(d.id)}">Retirer</button></div>
+      </div>`).join('')}</div>` : '<p class="plan-empty">Aucune demande pour l’instant.</p>'}
+      ${L.some(d => d.status !== 'prête') ? '<div><button class="btn" id="demCheck">Vérifier maintenant</button></div>' : ''}</section>
+  </div>`;
+  const f = $('#demForm');
+  f.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { DM.type = b.dataset.dt; f.querySelectorAll('[data-dt]').forEach(x => x.classList.toggle('on', x === b)); f.consigne.placeholder = DEM_HINT[DM.type]; });
+  f.onsubmit = e => { e.preventDefault(); demSend(f); };
+  const ck = $('#demCheck'); if (ck) ck.onclick = async () => { ck.disabled = true; ck.textContent = 'Vérification…'; const n = await demPoll(); if (!n) { ck.disabled = false; ck.textContent = 'Vérifier maintenant'; toast('Pas encore prête : revenez un peu plus tard.'); } };
+  app.querySelectorAll('[data-ddeck]').forEach(b => b.onclick = () => { const d = store.get('decks', {})[b.dataset.ddeck]; fcStart(d.cards.map((c, k) => 'p:' + d.id + '#' + k), d.title); });
+  app.querySelectorAll('[data-dexam]').forEach(b => b.onclick = () => { const ex = byId[b.dataset.dexam]; if (!ex) return toast('QCM introuvable sur cet appareil.'); if (ex.ue && UES.includes(ex.ue)) { ue = ex.ue; store.set('ue', ue); } view = 'annales'; store.set('view', view); home(); });
+  app.querySelectorAll('[data-dfiche]').forEach(b => b.onclick = () => demFiche(b.dataset.dfiche));
+  app.querySelectorAll('[data-ddel]').forEach(b => b.onclick = () => { if (!confirm('Retirer cette demande de la liste ? (les flashcards et fiches reçues restent disponibles)')) return; store.set('demandes', demAll().filter(d => d.id !== b.dataset.ddel)); demHome(); });
+  window.scrollTo(0, 0);
+  demPoll(true);
+}
+async function demSend(f) {
+  if (DM.busy) return;
+  const file = f.doc.files[0], consigne = f.consigne.value.trim(); if (!file || !consigne) return;
+  const st = $('#demStat'), btn = $('#demSend'), say = t => { if (st) st.textContent = t; };
+  DM.busy = true; btn.disabled = true;
+  try {
+    const I = window.UE4Import, name = file.name, low = name.toLowerCase();
+    let texte = '', image = null;
+    if (low.endsWith('.pdf') || file.type === 'application/pdf') texte = (await I.readPdf(file, say)).text;
+    else if (low.endsWith('.docx')) texte = (await I.readDocx(file, say)).text;
+    else if (file.type.startsWith('image/')) { say('Préparation de la photo…'); const u = await I.shrink(await I.readAsDataURL(file), 1600); image = await (await fetch(u)).blob(); }
+    else texte = await file.text();
+    if (!image && texte.replace(/\s/g, '').length < 30) throw new Error('Le texte de ce document n’a pas pu être lu (document scanné ?). Essayez avec une photo des pages.');
+    say('Envoi de la demande…');
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+    const fd = new FormData();
+    fd.append('form-name', 'demande'); fd.append('id', id); fd.append('type', DM.type); fd.append('ue', f.ue.value); fd.append('titre', name.replace(/\.[^.]+$/, '')); fd.append('nom', f.nom.value.trim());
+    fd.append('consigne', consigne); fd.append('fichier', name); fd.append('texte', texte.slice(0, 400000));
+    if (image) fd.append('image', image, 'page.jpg');
+    await fetch(DEM_URL, { method: 'POST', body: fd, mode: 'no-cors' });
+    const L = demAll(); L.push({ id, type: DM.type, ue: f.ue.value, titre: name.replace(/\.[^.]+$/, ''), fichier: name, consigne, at: Date.now(), status: 'envoyée' }); store.set('demandes', L);
+    toast('Demande envoyée. Le résultat arrivera ici dès qu’elle sera traitée.');
+    DM.busy = false; demHome();
+  } catch (e) { say((e && e.message) || 'Envoi impossible : vérifiez la connexion internet.'); DM.busy = false; btn.disabled = false; }
+}
+function demFiche(id) {
+  const F = store.get('fiches', {})[id]; if (!F) return;
+  $('#barTitle').textContent = F.title; $('#homeBtn').hidden = false;
+  app.innerHTML = `<div class="wrap fiche"><article class="hans"><h4>${esc(F.title)}</h4>${(F.sections || []).map(sc => `${sc.titre ? `<h5>${esc(sc.titre)}</h5>` : ''}${(sc.points || []).length ? `<ul>${sc.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}${sc.texte ? `<p>${esc(sc.texte)}</p>` : ''}`).join('')}</article></div>`;
+  window.scrollTo(0, 0);
+}
+setTimeout(() => demPoll(false), 2500);
 
 /* ---------- Coupes d'histologie : reconnaître la coupe (window.HISTO, textes mot pour mot des cours) ---------- */
 const HISTO_CH = ['Épithéliums : introduction', 'Épithéliums de revêtement', 'Épithéliums glandulaires', 'Tissu nerveux', 'Tissu musculaire'];
@@ -1401,6 +1518,7 @@ function fcCards(u) {            // u = UE, ou null pour toutes
   const qres = store.get('qres', {});
   const out = [];
   BASE.concat(IMPORTS).forEach(e => { if (u && (e.ue || (e.imported ? null : 'UE4')) !== u) return; e.questions.forEach((q, k) => { const r = qres[e.id + '#' + k]; if (r && (r.w || 0) >= 2 && q.items && q.items.length) out.push(e.id + '#' + k); }); });
+  Object.values(store.get('decks', {})).forEach(d => { if (u && d.ue && d.ue !== u) return; (d.cards || []).forEach((c, k) => out.push('p:' + d.id + '#' + k)); });
   return out;
 }
 const fcState = () => store.get('fc', {});
@@ -1469,6 +1587,7 @@ function fcRender() {
     $('#fcBack').onclick = home; FC = null; return;
   }
   const key = FC.queue[0], i = key.lastIndexOf('#'), eid = key.slice(0, i), k = +key.slice(i + 1);
+  if (key.startsWith('p:')) return fcRenderPerso(key, eid.slice(2), k);
   const q = findQ(eid, k), e = byId[eid];
   if (!q) { FC.queue.shift(); return fcRender(); }
   const cur = fcState()[key];
@@ -1490,6 +1609,22 @@ function fcRender() {
     <div class="fcbar">${FC.shown ? [['C', 'À revoir', 'again'], ['V', 'Difficile', 'hard'], ['B', 'Moyen', 'good'], ['N', 'Facile', 'easy']].map(([kk, l, c], g) => `<button class="fcb ${c}" data-g="${g}"><b>${l}</b><span>${fcFmt(fcNext(cur, g))}</span><kbd>${kk}</kbd></button>`).join('') : '<button class="btn blue fcshow" id="fcShow">Retourner la carte <kbd>Espace</kbd></button>'}</div>
   </div>`;
   app.querySelectorAll('.figs img').forEach(img => img.onclick = () => zoom(img.src));
+  const sh = $('#fcShow'); if (sh) sh.onclick = () => { FC.shown = true; fcRender(); };
+  app.querySelectorAll('[data-g]').forEach(b => b.onclick = () => fcGrade(+b.dataset.g));
+  if (!FC.shown) window.scrollTo(0, 0);
+}
+function fcRenderPerso(key, did, k) {
+  const d = store.get('decks', {})[did], c = d && d.cards[k];
+  if (!c) { FC.queue.shift(); return fcRender(); }
+  const cur = fcState()[key];
+  app.innerHTML = `<div class="fcwrap wrap">
+    <div class="fcprog"><span>${FC.done} faite${FC.done > 1 ? 's' : ''} · ${FC.queue.length} restante${FC.queue.length > 1 ? 's' : ''}</span><div class="bar"><i style="width:${FC.done / (FC.done + FC.queue.length) * 100}%"></i></div></div>
+    <article class="q fc pcard ${FC.shown ? 'reveal' : ''}">
+      <div class="qh"><span class="num">${esc(d.ue ? d.ue + ' · ' : '')}${esc(d.title)}</span><span class="ty">Carte ${k + 1} / ${d.cards.length}</span></div>
+      <div class="qb"><div class="stem precto">${esc(c.recto)}</div>${FC.shown ? `<div class="pverso">${esc(c.verso)}</div>` : ''}</div>
+    </article>
+    <div class="fcbar">${FC.shown ? [['C', 'À revoir', 'again'], ['V', 'Difficile', 'hard'], ['B', 'Moyen', 'good'], ['N', 'Facile', 'easy']].map(([kk, l, cl], g) => `<button class="fcb ${cl}" data-g="${g}"><b>${l}</b><span>${fcFmt(fcNext(cur, g))}</span><kbd>${kk}</kbd></button>`).join('') : '<button class="btn blue fcshow" id="fcShow">Retourner la carte <kbd>Espace</kbd></button>'}</div>
+  </div>`;
   const sh = $('#fcShow'); if (sh) sh.onclick = () => { FC.shown = true; fcRender(); };
   app.querySelectorAll('[data-g]').forEach(b => b.onclick = () => fcGrade(+b.dataset.g));
   if (!FC.shown) window.scrollTo(0, 0);
