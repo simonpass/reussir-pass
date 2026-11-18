@@ -16,7 +16,7 @@
   - CNAME www → simonpass.github.io. ;
   - MX et SPF OVH conservés.
 - Le domaine personnalisé GitHub Pages est réglé sur `reussir-pass.fr`, HTTPS forcé.
-- Ajouts du 18/11 : frise des 4 semaines (PR #6), retrait de « BRAVO CHRISTOPHE ! » (PR #8).
+- Ajouts du 18/11 : frise des 4 semaines (#6), retrait de « BRAVO CHRISTOPHE ! » (#8), jeu des coupes d'histologie (120 coupes), menu ☰, Planning, écrans de chargement et animations (#9), style « cahier » sobre (#10), demandes personnalisées (rubrique « Mes demandes »).
 - Ticket OVH CS17180422 : annulation de la commande en double n° 263780401 (5,99 €), à suivre. La commande gardée est la n° 263780358.
 
 ## Reste à faire, dans l'ordre
@@ -27,6 +27,18 @@
    - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
    - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`), attendre la réponse ;
    - idées d'abonnement payant et d'application mobile.
+
+## Traiter les demandes (quand Simon dit « traite les demandes »)
+Rubrique « Mes demandes » du site : la personne envoie un document (texte extrait dans le navigateur, ou une photo) et une consigne (flashcards, QCM, fiche, autre). Les envois arrivent dans le formulaire Netlify « demande » du site medecine-facile (le reste de ce site redirige vers reussir-pass.fr).
+1. `node tools/demandes.js list` : télécharge les demandes dans `.demandes/<id>/` (demande.json, texte.txt, image.jpg éventuelle ; dossier non versionné).
+2. Lire la consigne et le document, puis écrire `site/demandes/<id>.json`, en s'appuyant UNIQUEMENT sur le document (ne rien inventer) :
+   - flashcards : `{ "type": "flashcards", "title": "…", "ue": "UE5", "message": "mot facultatif", "cards": [{ "recto": "…", "verso": "…" }] }`
+   - QCM : `{ "type": "qcm", "title": "…", "ue": "…", "exam": { "questions": [ format des imports : num, type QRM/QRU, stem, items [{letter,text}], answer [lettres], corrections {A:{verdict,text}}, general ] } }`
+   - fiche : `{ "type": "fiche", "title": "…", "fiche": { "sections": [{ "titre": "…", "points": ["…"], "texte": "…" }] } }`
+   - impossible ou hors sujet : `{ "type": "autre", "message": "explication" }`
+3. Branche + PR + fusion (mise en ligne) ; le site de la personne récupère le résultat tout seul (à l'ouverture, ou « Vérifier maintenant »).
+4. `node tools/demandes.js done <id>` : supprime la demande sur Netlify et le dossier local (confidentialité).
+Limites Netlify gratuites : 100 envois/mois, 10 Mo de fichiers/mois (photos seulement ; le texte des PDF/Word est envoyé comme texte).
 
 ## Méthode de travail
 - Une issue, puis une branche `feature/...` ou `fix/...`, puis une PR, puis la fusion après accord de Simon.
