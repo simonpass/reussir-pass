@@ -24,7 +24,10 @@ async function rest(p, opt = {}) {
 }
 
 async function list() {
-  const rows = await rest(`/rest/v1/demandes?status=eq.envoy%C3%A9e&select=*,profiles(prenom,nom,email)&order=created_at`);
+  const rows = await rest(`/rest/v1/demandes?status=eq.envoy%C3%A9e&select=*&order=created_at`);
+  const ids = [...new Set(rows.map(r => r.user_id))];
+  const profs = ids.length ? await rest(`/rest/v1/profiles?id=in.(${ids.join(',')})&select=id,prenom,nom`) : [];
+  rows.forEach(r => { r.profiles = profs.find(x => x.id === r.user_id) || null; });
   fs.mkdirSync(DIR, { recursive: true });
   for (const d of rows) {
     const dir = path.join(DIR, d.id); fs.mkdirSync(dir, { recursive: true });
