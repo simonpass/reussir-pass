@@ -552,6 +552,77 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; border: 1px solid curren
 .frise-wk ul { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 6px; font-size: 14.5px; }
 .frise-wk ul small { display: block; color: var(--muted); font-size: 12px; }
 @media (max-width: 760px) { .m3d-side { grid-template-columns: minmax(0, 1fr); } }
+.hcoupe { max-width: 900px; margin: 0 auto; padding-block: 14px 60px; display: grid; gap: 14px; }
+.hfig { margin: 0; display: grid; gap: 6px; }
+.hfig img { width: 100%; max-height: 62vh; object-fit: contain; background: #fff; border-radius: 14px; border: 1px solid var(--line); cursor: zoom-in; }
+.hfig figcaption { font-size: 13px; color: var(--muted); }
+.hq, .hans { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; }
+.hq .btn { justify-self: start; }
+.hans h4 { margin: 0; font-size: 20px; color: var(--brand); }
+.hans h5 { margin: 6px 0 0; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+.hans dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; }
+.hans dt { color: var(--muted); font-size: 14px; } .hans dd { margin: 0; }
+.hans ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+/* ---------- écrans de chargement ---------- */
+.splash { min-height: calc(100vh - 120px); display: grid; place-content: center; justify-items: center; gap: 12px; padding: 32px 16px; text-align: center; }
+.splash-mark { width: 84px; height: 84px; border-radius: 24px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 10px 30px color-mix(in srgb, var(--brand) 35%, transparent); animation: splashPulse 1.6s ease-in-out infinite; }
+.splash-mark svg { width: 48px; height: 48px; }
+.splash-name { font-size: 26px; font-weight: 800; color: var(--fg); letter-spacing: -.01em; }
+.splash-step { color: var(--muted); font-size: 15px; min-height: 1.4em; }
+.splash-bar { width: min(280px, 70vw); height: 8px; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, var(--brand) 12%, var(--surface-2)); }
+.splash-bar i { display: block; height: 100%; width: 8%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), var(--action)); transition: width .35s ease; }
+.splash-tip { color: var(--muted); font-size: 13px; max-width: 34ch; margin-top: 6px; }
+@keyframes splashPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.loader { display: grid; justify-items: center; align-content: center; gap: 12px; color: var(--muted); font-size: 15px; text-align: center; padding: 16px; }
+.loader::before { content: ''; width: 44px; height: 44px; border-radius: 50%; border: 4px solid color-mix(in srgb, var(--brand) 18%, transparent); border-top-color: var(--brand); border-right-color: var(--action); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.m3d-load { gap: 12px; align-content: center; justify-items: center; text-align: center; font-size: 15px; }
+.m3d-load::before { content: ''; width: 48px; height: 48px; border-radius: 50%; border: 4px solid color-mix(in srgb, var(--brand) 18%, transparent); border-top-color: var(--brand); border-right-color: var(--action); animation: spin .9s linear infinite; }
+.m3d-load.err::before { display: none; }
+.hfig img { min-height: 220px; background: linear-gradient(100deg, var(--surface-2) 30%, color-mix(in srgb, var(--brand) 10%, var(--surface-2)) 50%, var(--surface-2) 70%) 0 0 / 200% 100%; animation: shimmer 1.3s linear infinite; }
+.hfig img.ok { min-height: 0; animation: none; background: #fff; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .splash-mark, .loader::before, .m3d-load::before, .hfig img { animation: none; } }
+/* ---------- animations ---------- */
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-spring: cubic-bezier(.34, 1.56, .64, 1); }
+#app > * { animation: pageIn .38s var(--ease-out) both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.home > * { animation: riseIn .5s var(--ease-out) both; }
+.home > *:nth-child(2) { animation-delay: .04s; } .home > *:nth-child(3) { animation-delay: .08s; } .home > *:nth-child(4) { animation-delay: .12s; }
+.home > *:nth-child(5) { animation-delay: .16s; } .home > *:nth-child(n+6) { animation-delay: .2s; }
+@keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.cards > * { animation: cardIn .45s var(--ease-out) both; }
+.cards > *:nth-child(1) { animation-delay: .12s; } .cards > *:nth-child(2) { animation-delay: .16s; } .cards > *:nth-child(3) { animation-delay: .2s; }
+.cards > *:nth-child(4) { animation-delay: .24s; } .cards > *:nth-child(5) { animation-delay: .28s; } .cards > *:nth-child(6) { animation-delay: .32s; }
+.cards > *:nth-child(7) { animation-delay: .36s; } .cards > *:nth-child(8) { animation-delay: .4s; } .cards > *:nth-child(n+9) { animation-delay: .44s; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+.exam, .m3d-days button, .m3d-legend button, .viewtabs button, .uepick button { transition: transform .2s var(--ease-out), box-shadow .2s var(--ease-out), background-color .2s, border-color .2s, color .2s; }
+@media (hover: hover) and (pointer: fine) {
+  .exam:hover { transform: translateY(-3px); box-shadow: 0 12px 28px color-mix(in srgb, var(--brand) 16%, transparent); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+}
+.exam:active, .btn:active, .m3d-days button:active, .viewtabs button:active, .uepick button:active { transform: scale(.97); }
+.btn { transition: transform .15s var(--ease-out), filter .15s, box-shadow .2s; }
+.btn.orange:not(:disabled):hover, .btn.blue:not(:disabled):hover { filter: brightness(1.06); box-shadow: 0 6px 16px color-mix(in srgb, var(--brand) 22%, transparent); }
+details[open] > :not(summary) { animation: slidein .28s var(--ease-out) both; }
+.hans { animation: riseIn .4s var(--ease-out) both; }
+.hans h4 { animation: popIn .45s var(--ease-spring) both; }
+@keyframes popIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+.hans li, .m3d-ann li, .m3d-facts li { animation: slidein .3s var(--ease-out) both; }
+.hans li:nth-child(2) { animation-delay: .05s; } .hans li:nth-child(3) { animation-delay: .1s; } .hans li:nth-child(n+4) { animation-delay: .15s; }
+.hfig img.ok { animation: imgIn .5s var(--ease-out) both; }
+@keyframes imgIn { from { opacity: 0; filter: blur(6px); transform: scale(.985); } to { opacity: 1; filter: none; transform: none; } }
+.frise-wk > ol > li { animation: slidein .4s var(--ease-out) both; }
+.frise-wk > ol > li::before { transition: transform .25s var(--ease-spring), background-color .2s; }
+.frise-wk > ol > li:has(details[open])::before { transform: scale(1.35); background: var(--brand); }
+.m3d-zoom { animation: fadeIn .2s ease-out both; } .m3d-zoom img { animation: popIn .35s var(--ease-out) both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.m3d-info { transition: background-color .25s; }
+.hobj { display: grid; gap: 10px; }
+.hobj summary { cursor: pointer; min-height: 30px; }
+.hobj p { margin: 6px 0 0; }
+.hgrade { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+.hgrade .hok { background: var(--ok); color: #fff; } .hgrade .hbad { background: var(--bad); color: #fff; }
+.hgrade .btn:not(.hok):not(.hbad):not(.blue) { background: var(--surface-2, var(--surface)); border: 1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -562,16 +633,29 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; border: 1px solid curren
   <h1 id="barTitle">Annales PASS</h1>
 </div></div>
 <div class="subbar" id="subbar" hidden><div class="wrap" id="tabs"></div></div>
-<div id="app"></div>
-
+<div id="app"><div class="splash" role="status" aria-live="polite">
+  <div class="splash-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h17a9 9 0 0 1 0 18H18v12"/><path d="M18 9v18"/><path d="M30 33l4 4 8-9"/></svg></div>
+  <b class="splash-name">Réussir PASS</b>
+  <span class="splash-step" id="splashStep">Chargement des annales…</span>
+  <div class="splash-bar" aria-hidden="true"><i id="splashFill"></i></div>
+  <small class="splash-tip">Annales, banques de QCM, modèles 3D et coupes : tout est enregistré sur cet appareil.</small>
+</div></div>
+<script>
+window.__ld = (n, t) => { const f = document.getElementById('splashFill'), s = document.getElementById('splashStep'); if (f) f.style.width = n + '%'; if (s && t) s.textContent = t; };
+</script>
 <script src="data.js"></script>
+<script>__ld(30, 'Chargement des banques de QCM…')</script>
 <script src="parser.js"></script>
 <script src="bdq.js"></script>
 <script src="bank.js"></script>
+<script>__ld(80, 'Chargement des modèles 3D…')</script>
 <script src="sde3d.js"></script>
 <script src="cours3d.js"></script>
 <script src="model3d.js"></script>
+<script>__ld(90, 'Chargement des coupes…')</script>
+<script src="histo.js"></script>
 <script src="import.js"></script>
+<script>__ld(100, 'Presque prêt…')</script>
 <script>
 (() => {
 'use strict';
@@ -631,6 +715,7 @@ function home() {
   S = null; FC = null;
   if (view === 'fc') return fcHome();
   if (view === 'm3d') return m3dHome();
+  if (view === 'histo') return histoHome();
   $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
   $('#barTitle').textContent = `Annales ${ue}`;
   document.documentElement.dataset.ue = ue;
@@ -656,6 +741,7 @@ function home() {
       <button role="tab" data-view="bdq" class="${view === 'bdq' ? 'on' : ''}" aria-selected="${view === 'bdq'}">BDQCM par matière</button>
       <button role="tab" data-view="bank" class="${view === 'bank' ? 'on' : ''}" aria-selected="${view === 'bank'}">Banque de QCM</button>
       <button role="tab" data-view="m3d" aria-selected="false">Modèles 3D</button>
+      <button role="tab" data-view="histo" aria-selected="false">Coupes</button>
       <button role="tab" data-view="fc" aria-selected="false">Flashcards${fcDue(fcCards(null)).length ? ` <span class="badge">${fcDue(fcCards(null)).length}</span>` : ''}</button>
     </div>
     <div class="hero">
@@ -796,6 +882,7 @@ function m3dHome() {
       <button role="tab" data-view="bdq" aria-selected="false">BDQCM par matière</button>
       <button role="tab" data-view="bank" aria-selected="false">Banque de QCM</button>
       <button role="tab" data-view="m3d" class="on" aria-selected="true">Modèles 3D</button>
+      <button role="tab" data-view="histo" aria-selected="false">Coupes</button>
       <button role="tab" data-view="fc" aria-selected="false">Flashcards</button>
     </div>
     <div class="hero"><span class="eyebrow">UE5 · Embryologie</span><h2>Modèles 3D <em>interactifs</em></h2>
@@ -824,6 +911,93 @@ function m3dOpen(i, st) {
   const host = document.createElement('div'); host.className = 'wrap m3dwrap'; app.innerHTML = ''; app.appendChild(host);
   window.Model3D.open(host, i, { esc, stage: st || 0 });
   window.scrollTo(0, 0);
+}
+/* ---------- Coupes d'histologie : reconnaître la coupe (window.HISTO, textes mot pour mot des cours) ---------- */
+const HISTO_CH = ['Épithéliums : introduction', 'Épithéliums de revêtement', 'Épithéliums glandulaires', 'Tissu nerveux', 'Tissu musculaire'];
+let HS = null;
+function histoHome() {
+  $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
+  $('#barTitle').textContent = 'Coupes d’histologie'; document.documentElement.dataset.ue = 'UE2';
+  const H = window.HISTO || [], st = store.get('histo', {});
+  const chs = HISTO_CH.filter(c => H.some(h => h.chapitre === c)).concat([...new Set(H.map(h => h.chapitre))].filter(c => !HISTO_CH.includes(c)));
+  const stat = list => { const seen = list.filter(h => st[h.id]); return { n: list.length, seen: seen.length, ok: seen.filter(h => st[h.id].ok).length }; };
+  const card = (key, label, list) => { const t = stat(list); return `<button class="exam" data-hch="${esc(key)}"><span class="t">${esc(label)}</span><span class="m"><span>${t.n} coupe${t.n > 1 ? 's' : ''}</span></span><span class="m">${t.seen ? `Reconnues : <span class="best">${t.ok}/${t.seen}</span> à la dernière réponse` : 'Pas encore faites'}</span></button>`; };
+  const wrongs = H.filter(h => st[h.id] && !st[h.id].ok);
+  app.innerHTML = `<div class="home wrap">
+    <div class="viewtabs" role="tablist" aria-label="Affichage">
+      <button role="tab" data-view="annales" aria-selected="false">Annales</button>
+      <button role="tab" data-view="bdq" aria-selected="false">BDQCM par matière</button>
+      <button role="tab" data-view="bank" aria-selected="false">Banque de QCM</button>
+      <button role="tab" data-view="m3d" aria-selected="false">Modèles 3D</button>
+      <button role="tab" data-view="histo" class="on" aria-selected="true">Coupes</button>
+      <button role="tab" data-view="fc" aria-selected="false">Flashcards</button>
+    </div>
+    <div class="hero"><span class="eyebrow">Histologie · Tissus</span><h2>Reconnaître <em>la coupe</em></h2>
+      <p>Une coupe du cours s’affiche : dites de quoi il s’agit, où on la trouve et ses caractéristiques, puis touchez « Voir la réponse » pour comparer avec le cours.</p></div>
+    ${H.length ? `<section class="group"><h3>Chapitres</h3><div class="cards">${card('*', 'Toutes les coupes', H)}${chs.map(c => card(c, c, H.filter(h => h.chapitre === c))).join('')}${wrongs.length ? card('!', 'Coupes ratées', wrongs) : ''}</div></section>` : '<p class="note-src">Les coupes ne sont pas encore chargées.</p>'}
+    ${histoObjHTML()}
+  </div>`;
+  app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { if (b.dataset.view === view) return; view = b.dataset.view; store.set('view', view); home(); });
+  app.querySelectorAll('[data-hch]').forEach(b => b.onclick = () => histoStart(b.dataset.hch));
+  window.scrollTo(0, 0);
+}
+function histoObjHTML() {
+  const N = window.HISTO_NOTE, O = window.HISTO_OBJ || [];
+  if (!N && !O.length) return '';
+  return `<section class="group"><h3>Ce qu’attend le professeur</h3><div class="hobj">
+    ${N ? `<details class="hans"><summary><b>Réponses du ${esc(N.auteur)}${N.date ? ' (' + esc(N.date) + ')' : ''}</b></summary>${(N.texte || []).map(t => `<p>${esc(t)}</p>`).join('')}</details>` : ''}
+    ${O.map(o => `<details class="hans"><summary><b>Objectifs : ${esc(o.chapitre)}</b></summary><ul>${(o.objectifs || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul><small class="note-src">Source : ${esc(o.cours || o.chapitre)}${o.page ? ', page ' + esc(o.page) : ''}</small></details>`).join('')}
+  </div></section>`;
+}
+function histoStart(key) {
+  const H = window.HISTO || [], st = store.get('histo', {});
+  let list = key === '*' ? H : key === '!' ? H.filter(h => st[h.id] && !st[h.id].ok) : H.filter(h => h.chapitre === key);
+  list = list.map(h => [Math.random(), h]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+  if (!list.length) return;
+  HS = { key, list, i: 0, ok: 0, done: 0 };
+  $('#homeBtn').hidden = false; histoShow();
+}
+function histoShow() {
+  const h = HS.list[HS.i];
+  $('#barTitle').textContent = `Coupe ${HS.i + 1} / ${HS.list.length}`;
+  app.innerHTML = `<div class="wrap hcoupe">
+    <figure class="hfig"><img src="${esc(h.src)}" alt="Coupe à reconnaître" id="hImg"><figcaption>${esc(h.chapitre)}${h.coloration ? '' : ''}</figcaption></figure>
+    <div class="hq"><b>Quelle est cette coupe ?</b><span>Type de tissu ou structure, localisation, caractéristiques : répondez de tête (ou à voix haute), puis vérifiez.</span>
+      <button class="btn orange" id="hShow">Voir la réponse</button></div>
+    <div id="hAns"></div>
+  </div>`;
+  const im = $('#hImg'); im.onclick = () => histoZoom(h.src); const ok = () => im.classList.add('ok'); if (im.complete && im.naturalWidth) ok(); else im.onload = ok;
+  $('#hShow').onclick = () => histoReveal(h);
+  window.scrollTo(0, 0);
+}
+function histoReveal(h) {
+  $('#hShow').remove();
+  $('#hAns').innerHTML = `<section class="hans">
+    <h4>${esc(h.reponse || h.titre)}</h4>
+    <dl>${h.titre && h.titre !== h.reponse ? `<dt>Légende du cours</dt><dd>${esc(h.titre)}</dd>` : ''}${h.localisation ? `<dt>Localisation</dt><dd>${esc(h.localisation)}</dd>` : ''}${h.coloration ? `<dt>Coloration</dt><dd>${esc(h.coloration)}</dd>` : ''}</dl>
+    ${(h.caracteristiques || []).length ? `<h5>Ce que dit le cours</h5><ul>${h.caracteristiques.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+    ${h.objectif ? `<h5>Objectif du cours</h5><p>${esc(h.objectif)}</p>` : ''}
+    <small class="note-src">Source : ${esc(h.cours || h.chapitre)}${h.page ? ', page ' + esc(h.page) : ''}</small>
+    <div class="hgrade"><span>Vous l’aviez reconnue ?</span><button class="btn hbad" data-ok="0">Non</button><button class="btn hok" data-ok="1">Oui</button></div>
+  </section>`;
+  app.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => {
+    const ok = b.dataset.ok === '1', st = store.get('histo', {});
+    st[h.id] = { ok, n: ((st[h.id] && st[h.id].n) || 0) + 1, t: Date.now() }; store.set('histo', st);
+    HS.done++; if (ok) HS.ok++; HS.i++;
+    if (HS.i < HS.list.length) histoShow(); else histoEnd();
+  });
+  $('#hAns').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function histoEnd() {
+  $('#barTitle').textContent = 'Coupes d’histologie';
+  app.innerHTML = `<div class="wrap hcoupe"><section class="hans"><h4>${HS.ok} / ${HS.done} coupes reconnues</h4>
+    <div class="hgrade"><button class="btn blue" id="hAgain">Recommencer</button><button class="btn" id="hBack">Retour aux chapitres</button></div></section></div>`;
+  $('#hAgain').onclick = () => histoStart(HS.key);
+  $('#hBack').onclick = () => home();
+}
+function histoZoom(src) {
+  const z = document.createElement('div'); z.className = 'm3d-zoom'; z.innerHTML = `<img src="${esc(src)}" alt="">`;
+  z.onclick = () => z.remove(); document.body.appendChild(z);
 }
 /* ---------- Banque de QCM : documents BDQCM du tutorat ---------- */
 const bankDocs = () => BASE.filter(e => e.bank && ueOf(e) === ue).sort((a, b) => a.title.localeCompare(b.title, 'fr', { numeric: true }));
@@ -978,6 +1152,7 @@ function fcHome() {
       <button role="tab" data-view="bdq" aria-selected="false">BDQCM par matière</button>
       <button role="tab" data-view="bank" aria-selected="false">Banque de QCM</button>
       <button role="tab" data-view="m3d" aria-selected="false">Modèles 3D</button>
+      <button role="tab" data-view="histo" aria-selected="false">Coupes</button>
       <button role="tab" data-view="fc" class="on" aria-selected="true">Flashcards${dueA.length ? ` <span class="badge">${dueA.length}</span>` : ''}</button>
     </div>
     <div class="hero"><span class="eyebrow">Répétition espacée</span>
