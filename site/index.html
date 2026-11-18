@@ -1365,7 +1365,7 @@ function renderCorrection(done) {
       <div class="panel qlist">${`<div class="sec"><span>Questions isolées</span><span>QI</span></div>` + rows.map(x => `<button class="qlink res-${cls(x.r)}" data-go="${x.i}"><span>${esc(qTitle(x.i))}</span><small>${x.r ? fmt(x.r.pts) : '–'}</small></button>`).join('')}</div>
     </aside>
     <main class="main">
-      <div class="scorehead"><span class="big">${fmt(note)} <small>/20</small></span>${max && note >= 15 ? '<span class="bravo">BRAVO CHRISTOPHE !</span>' : ''}<span class="s">${fmt(pts)} point${pts > 1 ? 's' : ''} sur ${max} question${max > 1 ? 's' : ''} notée${max > 1 ? 's' : ''}</span><span class="s">${rows.filter(x => x.r && x.r.pts >= 1).length} parfaites · ${rows.filter(x => x.r && x.r.pts > 0 && x.r.pts < 1).length} partielles · ${rows.filter(x => x.r && x.r.pts === 0).length} à zéro</span></div>
+      <div class="scorehead"><span class="big">${fmt(note)} <small>/20</small></span><span class="s">${fmt(pts)} point${pts > 1 ? 's' : ''} sur ${max} question${max > 1 ? 's' : ''} notée${max > 1 ? 's' : ''}</span><span class="s">${rows.filter(x => x.r && x.r.pts >= 1).length} parfaites · ${rows.filter(x => x.r && x.r.pts > 0 && x.r.pts < 1).length} partielles · ${rows.filter(x => x.r && x.r.pts === 0).length} à zéro</span></div>
       <h2>Questions isolées</h2>
       ${done.intro ? `<div class="intro">${esc(done.intro)}</div>` : ''}
       ${rows.map(({ q, r, i }) => `<article class="q r-${cls(r)}" id="q${i}">
