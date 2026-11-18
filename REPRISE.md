@@ -22,7 +22,7 @@
 ## Reste à faire, dans l'ordre
 1. HTTPS actif et forcé (certificat approuvé le 18/11/2026, expire le 16/02/2027, renouvelé automatiquement par GitHub).
 2. Déménagement : MOVE_TO activé (PR #4) et publié sur Netlify le 18/11 ; transfert testé de bout en bout. Reste : Christophe ouvre l’ancien lien et touche « Emporter ma progression », puis ajoute https://reussir-pass.fr à son écran d’accueil.
-3. Ensuite, désactiver ou supprimer le site Netlify (issue #2), avec l'accord de Simon.
+3. Netlify : Christophe a emporté sa progression ; le site Netlify redirige (301) vers reussir-pass.fr depuis le 18/11 (issue #2 fermée).
 4. En attente :
    - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
    - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`), attendre la réponse ;
