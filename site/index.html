@@ -1055,7 +1055,7 @@ document.addEventListener('keydown', e => {
 /* ---------- déménagement vers un nouveau domaine ----------
    MOVE_TO vide : rien ne change. Une fois le domaine en ligne, mettre l'adresse ici : sur l'ancienne adresse,
    un bandeau propose d'emporter la progression (dans le lien, compressée) vers la nouvelle. */
-const MOVE_TO = '';
+const MOVE_TO = 'https://reussir-pass.fr';
 function moveBanner() {
   if (!MOVE_TO || location.origin === MOVE_TO || document.getElementById('moveBar')) return;
   const host = new URL(MOVE_TO).host;
