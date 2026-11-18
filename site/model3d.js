@@ -324,13 +324,13 @@
     stop();
     const w = WEEKS[wi]; const esc = (opts && opts.esc) || (s => s);
     host.innerHTML = `<div class="m3d">
+      <div class="m3d-filter" id="m3dFilter"></div>
+      <div class="m3d-legend" id="m3dLegend"></div>
       <div class="m3d-stage"><div class="m3d-canvas" id="m3dCanvas"><div class="m3d-load">Chargement du modèle…</div></div>
         <div class="m3d-tools"><button class="btn ghost sm" id="m3dCut" aria-pressed="false">Coupe</button>${w.key === 's3' ? '<button class="btn ghost sm" id="m3dSpread" aria-pressed="false">Écarter les feuillets</button>' : ''}<button class="btn ghost sm on" id="m3dHl" aria-pressed="true">✦ Nouveautés</button><button class="btn ghost sm" id="m3dPlay" aria-pressed="false">▶ Lecture</button><button class="btn ghost sm" id="m3dReset">Recentrer</button></div></div>
       <div class="m3d-days" role="tablist">${w.stages.map((st, i) => `<button role="tab" data-st="${i}"><b>${esc(st[0])}</b><span>${esc(st[1])}</span></button>`).join('')}</div>
       <div class="m3d-new" id="m3dNew" aria-live="polite"></div>
       <div class="m3d-info" id="m3dInfo"><b>Touchez une structure</b><span>ou choisissez-la dans la légende.</span></div>
-      <div class="m3d-filter" id="m3dFilter"></div>
-      <div class="m3d-legend" id="m3dLegend"></div>
       <div class="m3d-side"><section class="m3d-figs"><h4>Schémas du cours</h4><div id="m3dFigs"></div></section><section class="m3d-ann"><h4>Ce jour, dans les annales</h4><ul id="m3dEvents"></ul></section></div>
       <p class="note-src">${esc(w.note)} Faites tourner avec un doigt, zoomez en pinçant. Légendes d’après le cours d’embryologie (UE5, Pr Labrune) ; « Ce qui tombe aux annales » et « Ce jour, dans les annales » : phrases copiées des corrections d’annales et de banques de QCM. Couleurs : ectoblaste bleu, mésoblaste rouge, entoblaste jaune.</p>
     </div>`;
