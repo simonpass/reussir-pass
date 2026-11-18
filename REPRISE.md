@@ -28,17 +28,23 @@
    - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`), attendre la réponse ;
    - idées d'abonnement payant et d'application mobile.
 
+## Comptes (Supabase, projet « pass-facile », réf. uwliytqqfbgxvnnqaadl, organisation pass-facile du compte Supabase de Simon)
+- Site : `site/config.js` (URL + clé publishable, publique par conception) et `site/compte.js` (inscription prénom/nom/e-mail/mot de passe, connexion, mot de passe oublié, progression synchronisée = clés `ue4:*` + épreuves importées, table `progress`).
+- Base : `supabase/schema.sql` (profiles, progress, demandes, bucket privé « demandes » ; RLS : chacun ne voit que ses lignes). Déjà exécuté le 18/11.
+- Auth : Site URL https://reussir-pass.fr ; redirections https://reussir-pass.fr/** et http://localhost:8777/** ; confirmation par e-mail activée (envoi gratuit limité à quelques e-mails/heure).
+- Clé de service : `tools/.supabase.json` (non versionné), **à coller par Simon** (Settings → API Keys → Secret key, ou legacy service_role). Claude ne doit pas la lire depuis le tableau de bord.
+
 ## Traiter les demandes (quand Simon dit « traite les demandes »)
-Rubrique « Mes demandes » du site : la personne envoie un document (texte extrait dans le navigateur, ou une photo) et une consigne (flashcards, QCM, fiche, autre). Les envois arrivent dans le formulaire Netlify « demande » du site medecine-facile (le reste de ce site redirige vers reussir-pass.fr).
-1. `node tools/demandes.js list` : télécharge les demandes dans `.demandes/<id>/` (demande.json, texte.txt, image.jpg éventuelle ; dossier non versionné).
-2. Lire la consigne et le document, puis écrire `site/demandes/<id>.json`, en s'appuyant UNIQUEMENT sur le document (ne rien inventer) :
-   - flashcards : `{ "type": "flashcards", "title": "…", "ue": "UE5", "message": "mot facultatif", "cards": [{ "recto": "…", "verso": "…" }] }`
+Rubrique « Mes demandes » : réservée aux comptes ; document (texte extrait dans le navigateur, ou photo) + consigne, rangés dans la table `demandes` ; la réponse n'est visible que par son auteur.
+1. `node tools/demandes.js list` : télécharge les demandes « envoyée » dans `.demandes/<id>/` (non versionné).
+2. Écrire le résultat dans un fichier JSON (hors dépôt, par ex. `.demandes/<id>/resultat.json`), en s'appuyant UNIQUEMENT sur le document :
+   - flashcards : `{ "type": "flashcards", "title": "…", "ue": "UE5", "message": "facultatif", "cards": [{ "recto": "…", "verso": "…" }] }`
    - QCM : `{ "type": "qcm", "title": "…", "ue": "…", "exam": { "questions": [ format des imports : num, type QRM/QRU, stem, items [{letter,text}], answer [lettres], corrections {A:{verdict,text}}, general ] } }`
    - fiche : `{ "type": "fiche", "title": "…", "fiche": { "sections": [{ "titre": "…", "points": ["…"], "texte": "…" }] } }`
-   - impossible ou hors sujet : `{ "type": "autre", "message": "explication" }`
-3. Branche + PR + fusion (mise en ligne) ; le site de la personne récupère le résultat tout seul (à l'ouverture, ou « Vérifier maintenant »).
-4. `node tools/demandes.js done <id>` : supprime la demande sur Netlify et le dossier local (confidentialité).
-Limites Netlify gratuites : 100 envois/mois, 10 Mo de fichiers/mois (photos seulement ; le texte des PDF/Word est envoyé comme texte).
+   - impossible : `{ "type": "autre", "message": "explication" }`
+3. `node tools/demandes.js publish <id> .demandes/<id>/resultat.json` : la personne le reçoit à la prochaine ouverture du site (pas de déploiement).
+4. `node tools/demandes.js done <id>` : efface le texte et la photo envoyés (le résultat reste dans son compte).
+L'ancien formulaire Netlify « demande » n'est plus utilisé (Netlify : crédits gratuits épuisés le 18/11, déploiements bloqués jusqu'au mois suivant ; la redirection fonctionne).
 
 ## Méthode de travail
 - Une issue, puis une branche `feature/...` ou `fix/...`, puis une PR, puis la fusion après accord de Simon.
