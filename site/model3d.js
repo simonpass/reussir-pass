@@ -322,7 +322,7 @@
       <div class="m3d-side"><section class="m3d-figs"><h4>Schémas du cours</h4><div id="m3dFigs"></div></section><section class="m3d-ann"><h4>Ce jour, dans les annales</h4><ul id="m3dEvents"></ul></section></div>
       <p class="note-src">${esc(w.note)} Faites tourner avec un doigt, zoomez en pinçant. Légendes d’après le cours d’embryologie (UE5, Pr Labrune) ; « Ce qui tombe aux annales » et « Ce jour, dans les annales » : phrases copiées des corrections d’annales et de banques de QCM. Couleurs : ectoblaste bleu, mésoblaste rouge, entoblaste jaune.</p>
     </div>`;
-    try { await load(); } catch (e) { host.querySelector('.m3d-load').textContent = 'Le modèle 3D n’a pas pu être chargé (connexion internet nécessaire).'; return; }
+    try { await load(); } catch (e) { { const l = host.querySelector('.m3d-load'); l.classList.add('err'); l.textContent = 'Le modèle 3D n’a pas pu être chargé (connexion internet nécessaire).'; } return; }
     const box = host.querySelector('#m3dCanvas'); box.innerHTML = '';
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.localClippingEnabled = true; box.appendChild(renderer.domElement);
     const scene = new THREE.Scene(); const cam = new THREE.PerspectiveCamera(40, 1, .05, 100);
