@@ -15,17 +15,13 @@
   - A @ → 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153 ;
   - CNAME www → simonpass.github.io. ;
   - MX et SPF OVH conservés.
-- Le domaine personnalisé GitHub Pages est réglé sur `reussir-pass.fr` (`https_enforced` encore à false).
+- Le domaine personnalisé GitHub Pages est réglé sur `reussir-pass.fr`, HTTPS forcé.
+- Ajouts du 18/11 : frise des 4 semaines (PR #6), retrait de « BRAVO CHRISTOPHE ! » (PR #8).
 - Ticket OVH CS17180422 : annulation de la commande en double n° 263780401 (5,99 €), à suivre. La commande gardée est la n° 263780358.
 
 ## Reste à faire, dans l'ordre
-1. Quand le DNS répond (`nslookup reussir-pass.fr` → 185.199.x.153, jusqu'à 24 h) :
-   - `gh api -X PUT repos/simonpass/reussir-pass/pages -F https_enforced=true` (possible seulement une fois le certificat émis) ;
-   - vérifier https://reussir-pass.fr.
-2. Déménagement des progrès (issue #1) :
-   - mettre `const MOVE_TO = 'https://reussir-pass.fr';` dans `site/index.html` (branche, PR, fusion) ;
-   - publier la même version sur Netlify : `npx netlify-cli deploy --prod --no-build --dir site --site 217e40f1-6bde-4f65-8ad8-1c67db02ba9f` ;
-   - Christophe clique sur « Emporter ma progression » (transfert par `#transfert=`, déjà testé).
+1. HTTPS actif et forcé (certificat approuvé le 18/11/2026, expire le 16/02/2027, renouvelé automatiquement par GitHub).
+2. Déménagement : MOVE_TO activé (PR #4) et publié sur Netlify le 18/11 ; transfert testé de bout en bout. Reste : Christophe ouvre l’ancien lien et touche « Emporter ma progression », puis ajoute https://reussir-pass.fr à son écran d’accueil.
 3. Ensuite, désactiver ou supprimer le site Netlify (issue #2), avec l'accord de Simon.
 4. En attente :
    - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
