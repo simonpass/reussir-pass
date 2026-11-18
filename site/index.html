@@ -781,6 +781,16 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .acc .plan-form { max-width: 560px; }
 .acc-alt { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .linkbtn { background: none; border: 0; padding: 6px 0; color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+/* mes flashcards */
+.addcard { border-style: dashed; background: transparent; cursor: pointer; }
+.card-row { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.card-row .cr-txt { flex: 1; min-width: 0; display: grid; gap: 4px; } .card-row .cr-txt span { color: var(--muted); white-space: pre-wrap; }
+.card-row .cr-act { display: flex; gap: 4px; align-items: center; }
+.card-row .ce { flex: 1; border: 0; padding: 0; background: none; }
+.chk { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--muted); }
+.chk input { width: 20px; height: 20px; }
+.plan-form textarea { font: inherit; font-size: 16px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 10px; resize: vertical; }
+.pcard .precto, .pcard .pverso { white-space: pre-wrap; }
 /* demandes */
 .impask { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; justify-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
 .impask div { display: grid; gap: 2px; flex: 1 1 280px; } .impask span { color: var(--muted); font-size: 14.5px; }
@@ -1277,7 +1287,7 @@ function demHome() {
   if (f) f.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { DM.type = b.dataset.dt; f.querySelectorAll('[data-dt]').forEach(x => x.classList.toggle('on', x === b)); f.consigne.placeholder = DEM_HINT[DM.type]; });
   if (f) f.onsubmit = e => { e.preventDefault(); demSend(f); };
   const ck = $('#demCheck'); if (ck) ck.onclick = async () => { ck.disabled = true; ck.textContent = 'Vérification…'; const n = await demPoll(); if (!n) { ck.disabled = false; ck.textContent = 'Vérifier maintenant'; toast('Pas encore prête : revenez un peu plus tard.'); } };
-  app.querySelectorAll('[data-ddeck]').forEach(b => b.onclick = () => { const d = store.get('decks', {})[b.dataset.ddeck]; fcStart(d.cards.map((c, k) => 'p:' + d.id + '#' + k), d.title); });
+  app.querySelectorAll('[data-ddeck]').forEach(b => b.onclick = () => { const d = store.get('decks', {})[b.dataset.ddeck]; fcStart(d.cards.map((c, k) => cardKey(d, c, k)), d.title); });
   app.querySelectorAll('[data-dexam]').forEach(b => b.onclick = () => { const ex = byId[b.dataset.dexam]; if (!ex) return toast('QCM introuvable sur cet appareil.'); if (ex.ue && UES.includes(ex.ue)) { ue = ex.ue; store.set('ue', ue); } view = 'annales'; store.set('view', view); home(); });
   app.querySelectorAll('[data-dfiche]').forEach(b => b.onclick = () => demFiche(b.dataset.dfiche));
   app.querySelectorAll('[data-ddel]').forEach(b => b.onclick = async () => { if (!confirm('Retirer cette demande ? (les flashcards, QCM et fiches reçus restent disponibles)')) return; try { await window.Compte.deleteDemande(b.dataset.ddel); } catch (e) {} store.set('demandes', demAll().filter(d => d.id !== b.dataset.ddel)); demHome(); });
@@ -1521,7 +1531,7 @@ function fcCards(u) {            // u = UE, ou null pour toutes
   const qres = store.get('qres', {});
   const out = [];
   BASE.concat(IMPORTS).forEach(e => { if (u && (e.ue || (e.imported ? null : 'UE4')) !== u) return; e.questions.forEach((q, k) => { const r = qres[e.id + '#' + k]; if (r && (r.w || 0) >= 2 && q.items && q.items.length) out.push(e.id + '#' + k); }); });
-  Object.values(store.get('decks', {})).forEach(d => { if (u && d.ue && d.ue !== u) return; (d.cards || []).forEach((c, k) => out.push('p:' + d.id + '#' + k)); });
+  Object.values(store.get('decks', {})).forEach(d => { if (u && d.ue && d.ue !== u) return; (d.cards || []).forEach((c, k) => out.push(cardKey(d, c, k))); });
   return out;
 }
 const fcState = () => store.get('fc', {});
@@ -1559,7 +1569,7 @@ function fcHome() {
     </div>
     <div class="hero"><span class="eyebrow">Répétition espacée</span>
       <h2>Flashcards <em>${esc(ue)}</em></h2>
-      <p>Chaque question ratée au moins 2 fois devient une carte. Vous y répondez de tête, vous retournez la carte, puis vous dites si c’était facile ou non : la carte revient plus ou moins vite, comme dans Anki.</p></div>
+      <p>Chaque question ratée au moins 2 fois devient une carte. Vous y répondez de tête, vous retournez la carte, puis vous dites si c’était facile ou non : la carte revient plus ou moins vite, comme dans Anki. Vous pouvez aussi créer vos propres cartes, plus bas.</p></div>
     <section class="group"><h3>À réviser maintenant</h3>
       <div class="revpanel">
         <div class="kpis"><div><b>${dueM.length}</b><span>à réviser en ${esc(ue)}</span></div><div><b>${dueA.length}</b><span>à réviser, toutes UE</span></div><div><b>${all.length}</b><span>cartes au total</span></div></div>
@@ -1570,12 +1580,98 @@ function fcHome() {
         <div class="note-src">${all.length ? (dueA.length ? '' : 'Rien à réviser pour l’instant. ') + (soon.length ? `Prochaine carte ${when(st[soon[0]].due)}.` : '') : 'Aucune carte pour l’instant : une carte se crée quand une même question est ratée 2 fois.'}${once ? ` ${once} question${once > 1 ? 's' : ''} ratée${once > 1 ? 's' : ''} une fois : encore une erreur et elle${once > 1 ? 's deviennent des cartes' : ' devient une carte'}.` : ''}</div>
         <div class="kbd">Clavier : Espace ou Entrée pour retourner la carte, puis <b>C</b> À revoir · <b>V</b> Difficile · <b>B</b> Moyen · <b>N</b> Facile.</div>
       </div></section>
+    ${deckListHTML()}
   </div>`;
   app.querySelectorAll('[data-ue]').forEach(b => b.onclick = () => { ue = b.dataset.ue; store.set('ue', ue); home(); });
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { if (b.dataset.view === view) return; view = b.dataset.view; store.set('view', view); home(); });
   $('#fcGo').onclick = () => fcStart(dueM, ue);
   $('#fcGoAll').onclick = () => fcStart(dueA, 'toutes les UE');
+  deckListBind();
   window.scrollTo(0, 0);
+}
+/* ---------- Mes flashcards : paquets créés par l'élève (recto / verso), révisés avec la même répétition espacée ---------- */
+const cardKey = (d, c, k) => 'p:' + d.id + '#' + (c.id || k);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const myDecks = () => Object.values(store.get('decks', {})).sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0));
+function deckListHTML() {
+  const D = myDecks(), st = fcState(), now = Date.now();
+  return `<section class="group"><h3>Mes flashcards</h3>
+    <p class="note-src">Créez vos propres cartes, comme dans Anki : une question au recto, la réponse au verso. Elles reviennent selon vos réponses, avec les autres flashcards.</p>
+    <div class="cards">
+      <button class="exam addcard" id="deckNew"><span class="t">+ Nouveau paquet</span><span class="m">Créer des cartes à la main</span></button>
+      <label class="exam addcard" for="deckImp"><span class="t">Importer depuis Anki</span><span class="m">Fichier texte exporté d’Anki (.txt) ou tableau (.csv)</span><input type="file" id="deckImp" accept=".txt,.csv,.tsv,text/plain" hidden></label>
+      ${D.map(d => { const due = d.cards.filter((c, k) => { const x = st[cardKey(d, c, k)]; return !x || x.due <= now; }).length; return `<button class="exam" data-deck="${esc(d.id)}"><span class="t">${esc(d.title)}</span><span class="m"><span>${d.cards.length} carte${d.cards.length > 1 ? 's' : ''}</span>${d.ue ? `<span>${esc(d.ue)}</span>` : ''}</span><span class="m">${due ? `<span class="best">${due} à réviser</span>` : 'À jour'}</span></button>`; }).join('')}
+    </div></section>`;
+}
+function deckListBind() {
+  const nb = $('#deckNew'); if (nb) nb.onclick = () => { const D = store.get('decks', {}), id = 'm' + newId(); D[id] = { id, title: 'Nouveau paquet', ue: ue || '', cards: [], mine: true, created: Date.now() }; store.set('decks', D); deckEdit(id, true); };
+  const im = $('#deckImp'); if (im) im.onchange = async () => { const f = im.files[0]; if (f) deckImport(f, await f.text()); };
+  app.querySelectorAll('[data-deck]').forEach(b => b.onclick = () => deckEdit(b.dataset.deck));
+}
+function deckSave(d) { const D = store.get('decks', {}); d.updated = Date.now(); D[d.id] = d; store.set('decks', D); }
+function deckEdit(id, focusTitle) {
+  const d = store.get('decks', {})[id]; if (!d) return home();
+  $('#barTitle').textContent = 'Paquet · ' + d.title; $('#homeBtn').hidden = false; $('#menuBtn').hidden = true;
+  const st = fcState(), now = Date.now(), due = d.cards.filter((c, k) => { const x = st[cardKey(d, c, k)]; return !x || x.due <= now; });
+  app.innerHTML = `<div class="home wrap deck">
+    <form class="plan-form" id="deckHead"><div class="row">
+      <label>Nom du paquet<input name="title" maxlength="80" required value="${esc(d.title)}"></label>
+      <label>UE<select name="ue"><option value="">—</option>${UES.map(u => `<option ${u === d.ue ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label></div></form>
+    <div class="hgrade"><button class="btn orange" id="deckRev" ${due.length ? '' : 'disabled'}>Réviser${due.length ? ' (' + due.length + ')' : ''}</button><button class="btn blue" id="deckAll" ${d.cards.length ? '' : 'disabled'}>Tout réviser</button><button class="btn" id="deckExp" ${d.cards.length ? '' : 'disabled'}>Exporter pour Anki</button><button class="btn" id="deckDel">Supprimer le paquet</button></div>
+    <section class="group"><h3>Ajouter une carte</h3>
+      <form class="plan-form" id="cardForm">
+        <label>Recto (question)<textarea name="recto" rows="3" maxlength="2000" required placeholder="ex. Quelles sont les phases de la mitose ?"></textarea></label>
+        <label>Verso (réponse)<textarea name="verso" rows="4" maxlength="4000" required placeholder="ex. Prophase, prométaphase, métaphase, anaphase, télophase."></textarea></label>
+        <div class="hgrade"><button class="btn blue" type="submit">Ajouter la carte</button><label class="chk"><input type="checkbox" name="inv"> Créer aussi la carte inversée</label></div>
+      </form></section>
+    <section class="group"><h3>${d.cards.length} carte${d.cards.length > 1 ? 's' : ''}</h3>
+      <div class="dem-list">${d.cards.map((c, k) => { const x = st[cardKey(d, c, k)]; return `<div class="card-row" data-ci="${k}">
+        <div class="cr-txt"><b>${esc(c.recto)}</b><span>${esc(c.verso)}</span><small class="note-src">${x ? (x.due <= now ? 'À réviser' : 'Prochaine révision le ' + new Date(x.due).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })) : 'Nouvelle'}</small></div>
+        <div class="cr-act"><button class="btn" data-cedit="${k}">Modifier</button><button class="iconbtn pdel" data-cdel="${k}" aria-label="Supprimer la carte"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button></div></div>`; }).join('') || '<p class="plan-empty">Aucune carte pour l’instant.</p>'}</div></section>
+  </div>`;
+  const head = $('#deckHead'), re = () => { const y = window.scrollY; deckEdit(id); window.scrollTo(0, y); };
+  head.title.onchange = () => { d.title = head.title.value.trim() || 'Sans titre'; deckSave(d); $('#barTitle').textContent = 'Paquet · ' + d.title; };
+  head.ue.onchange = () => { d.ue = head.ue.value; deckSave(d); };
+  head.onsubmit = e => e.preventDefault();
+  if (focusTitle) { head.title.focus(); head.title.select(); }
+  $('#deckRev').onclick = () => fcStart(due.map(c => cardKey(d, c, d.cards.indexOf(c))), d.title);
+  $('#deckAll').onclick = () => fcStart(d.cards.map((c, k) => cardKey(d, c, k)), d.title);
+  $('#deckExp').onclick = () => deckExport(d);
+  $('#deckDel').onclick = () => { if (!confirm(`Supprimer le paquet « ${d.title} » et ses ${d.cards.length} cartes ? Cette action est définitive.`)) return; const D = store.get('decks', {}); delete D[id]; store.set('decks', D); toast('Paquet supprimé.'); home(); };
+  const f = $('#cardForm');
+  f.onsubmit = e => {
+    e.preventDefault(); const r = f.recto.value.trim(), v = f.verso.value.trim(); if (!r || !v) return;
+    d.cards.push({ id: newId(), recto: r, verso: v }); if (f.inv.checked) d.cards.push({ id: newId(), recto: v, verso: r });
+    deckSave(d); toast(f.inv.checked ? '2 cartes ajoutées.' : 'Carte ajoutée.'); re(); setTimeout(() => { const t = $('#cardForm'); t && t.recto.focus(); }, 30);
+  };
+  app.querySelectorAll('[data-cdel]').forEach(b => b.onclick = () => { if (!confirm('Supprimer cette carte ?')) return; d.cards.splice(+b.dataset.cdel, 1); deckSave(d); re(); });
+  app.querySelectorAll('[data-cedit]').forEach(b => b.onclick = () => {
+    const k = +b.dataset.cedit, c = d.cards[k], row = app.querySelector(`[data-ci="${k}"]`);
+    if (!c.id) c.id = newId();
+    row.innerHTML = `<form class="plan-form ce"><label>Recto<textarea name="recto" rows="3" maxlength="2000" required>${esc(c.recto)}</textarea></label><label>Verso<textarea name="verso" rows="4" maxlength="4000" required>${esc(c.verso)}</textarea></label><div class="hgrade"><button class="btn blue" type="submit">Enregistrer</button><button class="btn" type="button" data-cancel>Annuler</button></div></form>`;
+    const ef = row.querySelector('form'); ef.recto.focus();
+    ef.querySelector('[data-cancel]').onclick = re;
+    ef.onsubmit = e => { e.preventDefault(); c.recto = ef.recto.value.trim() || c.recto; c.verso = ef.verso.value.trim() || c.verso; deckSave(d); re(); };
+  });
+  window.scrollTo(0, 0);
+}
+/* Anki : export « Notes en texte brut » = une note par ligne, champs séparés par une tabulation (en-têtes #separator… ignorés) */
+function deckImport(file, text) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+  const sep = /\.csv$/i.test(file.name) && !text.includes('\t') ? (text.includes(';') ? ';' : ',') : '\t';
+  const clean = t => String(t || '').replace(/^"(.*)"$/s, '$1').replace(/""/g, '"').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+  const cards = lines.map(l => l.split(sep)).filter(p => p.length >= 2).map(p => ({ id: newId(), recto: clean(p[0]), verso: clean(p[1]) })).filter(c => c.recto && c.verso);
+  if (!cards.length) return toast('Aucune carte trouvée : exportez depuis Anki en « Notes en texte brut » (.txt).');
+  const D = store.get('decks', {}), id = 'm' + newId();
+  D[id] = { id, title: file.name.replace(/\.[^.]+$/, ''), ue: ue || '', cards, mine: true, created: Date.now() }; store.set('decks', D);
+  toast(cards.length + ' cartes importées.'); deckEdit(id);
+}
+function deckExport(d) {
+  const esc2 = t => String(t).replace(/\t/g, ' ').replace(/\r?\n/g, '<br>');
+  const txt = '#separator:tab\n#html:true\n' + d.cards.map(c => esc2(c.recto) + '\t' + esc2(c.verso)).join('\n') + '\n';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' }));
+  a.download = (d.title || 'paquet').replace(/[\\/:*?"<>|]+/g, '-') + '.txt'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Fichier prêt : dans Anki, Fichier → Importer.');
 }
 function fcStart(keys, label) {
   if (!keys.length) return;
@@ -1590,7 +1686,7 @@ function fcRender() {
     $('#fcBack').onclick = home; FC = null; return;
   }
   const key = FC.queue[0], i = key.lastIndexOf('#'), eid = key.slice(0, i), k = +key.slice(i + 1);
-  if (key.startsWith('p:')) return fcRenderPerso(key, eid.slice(2), k);
+  if (key.startsWith('p:')) return fcRenderPerso(key, eid.slice(2), key.slice(i + 1));
   const q = findQ(eid, k), e = byId[eid];
   if (!q) { FC.queue.shift(); return fcRender(); }
   const cur = fcState()[key];
@@ -1616,8 +1712,10 @@ function fcRender() {
   app.querySelectorAll('[data-g]').forEach(b => b.onclick = () => fcGrade(+b.dataset.g));
   if (!FC.shown) window.scrollTo(0, 0);
 }
-function fcRenderPerso(key, did, k) {
-  const d = store.get('decks', {})[did], c = d && d.cards[k];
+function fcRenderPerso(key, did, ref) {
+  const d = store.get('decks', {})[did];
+  let k = d ? d.cards.findIndex(x => x.id === ref) : -1; if (d && k < 0 && /^\d+$/.test(ref) && d.cards[+ref] && !d.cards[+ref].id) k = +ref;
+  const c = d && d.cards[k];
   if (!c) { FC.queue.shift(); return fcRender(); }
   const cur = fcState()[key];
   app.innerHTML = `<div class="fcwrap wrap">
