@@ -389,9 +389,9 @@
     });
     const onResize = () => { const W = box.clientWidth, H = box.clientHeight; renderer.setSize(W, H); cam.aspect = W / H; cam.updateProjectionMatrix(); };
     window.addEventListener('resize', onResize); onResize();
-    stage = -1; setStage(0);
+    stage = -1; setStage(Math.min(Math.max(+(opts && opts.stage) || 0, 0), w.stages.length - 1));
     const loop = () => { if (!document.body.contains(box)) { stop(); return; } const t = performance.now() / 1000; if (!ctl.autoRotate && idle && performance.now() - idle > 7000) ctl.autoRotate = true; ctl.update(); api && api.tick && api.tick(stage, t); animate(); renderer.render(scene, cam); cur.raf = requestAnimationFrame(loop); };
     cur = { renderer, onResize, raf: 0 }; loop();
   }
-  window.Model3D = { WEEKS: WEEKS.map(w => ({ key: w.key, title: w.title, sub: w.sub })), open, stop };
+  window.Model3D = { WEEKS: WEEKS.map(w => ({ key: w.key, title: w.title, sub: w.sub, stages: w.stages })), open, stop };
 })();

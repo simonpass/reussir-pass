@@ -539,6 +539,18 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; border: 1px solid curren
 .m3d-ann li { font-size: 14.5px; }
 .m3d-zoom { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.85); display: grid; place-items: center; padding: 16px; overflow: auto; }
 .m3d-zoom img { max-width: 100%; max-height: 100%; background: #fff; border-radius: 8px; }
+.frise { display: grid; gap: 18px; }
+.frise-wk h4 { margin: 0 0 8px; font-size: 15px; color: var(--brand); letter-spacing: .04em; text-transform: uppercase; }
+.frise-wk ol { list-style: none; margin: 0; padding: 0 0 0 16px; border-left: 3px solid var(--brand); display: grid; gap: 8px; }
+.frise-wk > ol > li { position: relative; }
+.frise-wk > ol > li::before { content: ''; position: absolute; left: -25px; top: 15px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 3px solid var(--brand); }
+.frise-wk details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.frise-wk summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; min-height: 30px; list-style: none; }
+.frise-wk summary::-webkit-details-marker { display: none; }
+.frise-wk summary b { flex: none; min-width: 72px; color: var(--brand); font-variant-numeric: tabular-nums; }
+.frise-wk details[open] summary { margin-bottom: 8px; }
+.frise-wk ul { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 6px; font-size: 14.5px; }
+.frise-wk ul small { display: block; color: var(--muted); font-size: 12px; }
 @media (max-width: 760px) { .m3d-side { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
@@ -789,16 +801,28 @@ function m3dHome() {
     <div class="hero"><span class="eyebrow">UE5 · Embryologie</span><h2>Modèles 3D <em>interactifs</em></h2>
       <p>Les 4 premières semaines du développement embryonnaire. Faites tourner l’embryon, avancez jour par jour et touchez une structure pour lire ce qu’en dit le cours.</p></div>
     <section class="group"><h3>Semaines de développement</h3><div class="cards">${W.map((w, i) => `<button class="exam m3dcard" data-m3d="${i}"><span class="pill">${esc(w.title)}</span><span class="t">${esc(w.sub.split(' : ')[1] || w.sub)}</span><span class="m">${esc(w.sub.split(' : ')[0])}</span></button>`).join('')}</div></section>
+    ${friseHTML(W)}
   </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { if (b.dataset.view === view) return; view = b.dataset.view; store.set('view', view); home(); });
-  app.querySelectorAll('[data-m3d]').forEach(b => b.onclick = () => m3dOpen(+b.dataset.m3d));
+  app.querySelectorAll('[data-m3d]').forEach(b => b.onclick = () => m3dOpen(+b.dataset.m3d, +(b.dataset.st || 0)));
   window.scrollTo(0, 0);
 }
-function m3dOpen(i) {
+/* Frise des 4 semaines : étapes et phrases des corrections d'annales (window.SDE), reliées au jour le plus proche du modèle 3D. */
+function friseHTML(W) {
+  const S = window.SDE || []; if (!S.length) return '';
+  const d0 = t => +((String(t).match(/\d+/) || [0])[0]);
+  const near = (wi, day) => { let k = 0; ((W[wi] && W[wi].stages) || []).forEach((s, j) => { if (d0(s[0]) <= day) k = j; }); return k; };
+  return `<section class="group"><h3>Frise des 4 semaines</h3><p class="note-src">Les événements importants jour par jour, avec les phrases des corrections d’annales. Touchez une étape pour les lire.</p><div class="frise">${S.map(w => {
+    const wi = W.findIndex(x => x.key === 's' + w.week);
+    const st = w.stages.map((s, j) => [s, j]).sort((a, b) => d0(a[0].day) - d0(b[0].day) || a[1] - b[1]).map(x => x[0]);
+    return `<div class="frise-wk"><h4>${esc(wi >= 0 ? W[wi].title : 'Semaine ' + w.week)}</h4><ol>${st.map(s => `<li><details><summary><b>${esc(s.day)}</b><span>${esc(s.label)}</span></summary><ul>${s.events.map(e => `<li>${esc(e.t)}<small>${esc(e.s)}</small></li>`).join('')}</ul>${wi >= 0 ? `<button class="btn" data-m3d="${wi}" data-st="${near(wi, d0(s.day))}">Voir en 3D</button>` : ''}</details></li>`).join('')}</ol></div>`;
+  }).join('')}</div></section>`;
+}
+function m3dOpen(i, st) {
   const w = window.Model3D.WEEKS[i];
   $('#barTitle').textContent = 'Modèle 3D · ' + w.title; $('#homeBtn').hidden = false; $('#menuBtn').hidden = true;
   const host = document.createElement('div'); host.className = 'wrap m3dwrap'; app.innerHTML = ''; app.appendChild(host);
-  window.Model3D.open(host, i, { esc });
+  window.Model3D.open(host, i, { esc, stage: st || 0 });
   window.scrollTo(0, 0);
 }
 /* ---------- Banque de QCM : documents BDQCM du tutorat ---------- */
