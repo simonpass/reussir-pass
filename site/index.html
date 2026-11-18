@@ -7,7 +7,7 @@
 <title>Annales PASS</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,500&display=swap">
 <style>
 /* Layout: exam-platform shell — blue top bar, left rail (timer, progress, question list), stacked question cards. */
 :root {
@@ -686,6 +686,99 @@ details[open] > :not(summary) { animation: slidein .28s var(--ease-out) both; }
 .hgrade { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 .hgrade .hok { background: var(--ok); color: #fff; } .hgrade .hbad { background: var(--bad); color: #fff; }
 .hgrade .btn:not(.hok):not(.hbad):not(.blue) { background: var(--surface-2, var(--surface)); border: 1px solid var(--line); }
+/* ===== Thème 3 : « cahier de révision » — papier, encre, serif pour les titres ; pas de dégradés ni de halos ===== */
+:root {
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --bg: #f6f3ec; --surface: #fffdf8; --surface-2: #f1ede4; --fg: #22252a; --muted: #6a6d72; --line: #e3ddd1;
+  --brand: #2c5d8a; --action: #c4572a; --action-ink: #fff;
+  --ok: #2f7d4f; --ok-soft: #e6f1e8; --bad: #b8433f; --bad-soft: #f8e4e1; --mid: #b7791f; --mid-soft: #f6ecd8;
+  --radius: 8px;
+  --shadow: 0 1px 0 rgba(34, 37, 42, .04);
+  --shadow-up: 0 2px 8px rgba(34, 37, 42, .07);
+}
+:root[data-ue="UE1"] { --brand: #2f6f62; } :root[data-ue="UE2"] { --brand: #6b4f8a; } :root[data-ue="UE4"] { --brand: #2c5d8a; }
+:root[data-ue="UE5"] { --brand: #9c3d4f; } :root[data-ue="UE6"] { --brand: #a35a1f; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1917; --surface: #22211e; --surface-2: #2a2825; --fg: #ece8e0; --muted: #a39f97; --line: #36342f;
+    --ok: #6fbf8a; --ok-soft: #1f2c22; --bad: #e07d76; --bad-soft: #352220; --mid: #d9a54f; --mid-soft: #33291a;
+    --shadow: none; --shadow-up: 0 2px 10px rgba(0, 0, 0, .35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1917; --surface: #22211e; --surface-2: #2a2825; --fg: #ece8e0; --muted: #a39f97; --line: #36342f;
+  --ok: #6fbf8a; --ok-soft: #1f2c22; --bad: #e07d76; --bad-soft: #352220; --mid: #d9a54f; --mid-soft: #33291a;
+  --shadow: none; --shadow-up: 0 2px 10px rgba(0, 0, 0, .35);
+}
+body { background: var(--bg); font-family: var(--font); font-size: 16.5px; letter-spacing: 0; }
+h1, h2, h3, h4, .exam .t, .scorehead .big, .splash-name, .drawer-head b, .cal-head h3, .plan-day h4, .hans h4 { letter-spacing: -.005em; }
+body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); }
+.topbar { box-shadow: none; border-bottom: 1px solid rgba(0, 0, 0, .12); }
+.topbar h1 { font-family: var(--serif); font-weight: 600; font-size: 19px; }
+.iconbtn { border-radius: 6px; }
+.subbar { background: color-mix(in srgb, var(--brand) 70%, #111); }
+
+/* titres de page : serif, sans encadré ni halo */
+.hero { background: none; border: 0; box-shadow: none; padding: 6px 2px 2px; border-radius: 0; gap: 6px; }
+.hero::after { display: none; }
+.hero .eyebrow { font-size: 13px; font-weight: 500; letter-spacing: .02em; text-transform: none; color: var(--muted); }
+.hero h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(28px, 4.2vw, 38px); line-height: 1.12; }
+.hero h2 em { color: inherit; font-style: italic; font-weight: 500; }
+.hero p { color: var(--muted); max-width: 62ch; }
+.group h3 { font-family: var(--serif); font-size: 19px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--fg); padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.group h3::before { display: none; }
+
+/* cartes et listes : traits fins, coins discrets */
+.exam, .uepick button, .random, .revpanel, .matcard, .chap, .addcard, .hq, .hans, .plan-form, .plan-item, .cal, .m3d-info, .m3d-side section, .frise-wk details, .cal-day { border-radius: var(--radius); box-shadow: none; }
+.exam { border: 1px solid var(--line); background: var(--surface); padding: 15px 16px; }
+.exam::before { width: 3px; background: var(--brand); opacity: .85; }
+.exam .t { font-size: 16.5px; font-weight: 600; }
+.exam .best { color: var(--fg); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .exam:hover, .uepick button:hover { transform: none; box-shadow: var(--shadow-up); border-color: color-mix(in srgb, var(--fg) 25%, var(--line)); } }
+.uepick button { box-shadow: none; }
+.uepick button .dot { box-shadow: none; width: 8px; height: 8px; }
+.uepick button b { font-weight: 700; }
+.uepick button.on { background: var(--c); border-color: var(--c); box-shadow: none; }
+.uepick button.on .dot { box-shadow: none; }
+.uepick button[data-ue="UE1"] { --c: #2f6f62; } .uepick button[data-ue="UE2"] { --c: #6b4f8a; } .uepick button[data-ue="UE4"] { --c: #2c5d8a; } .uepick button[data-ue="UE5"] { --c: #9c3d4f; } .uepick button[data-ue="UE6"] { --c: #a35a1f; }
+.seg { border-radius: 8px; box-shadow: none; } .seg button { border-radius: 6px; } .seg button.on { box-shadow: none; }
+.random { border-style: solid; background: var(--surface); }
+.kpis b, .matcard .mh b { font-family: var(--serif); font-weight: 600; color: var(--fg); }
+.pill { background: transparent; border: 1px solid color-mix(in srgb, var(--brand) 40%, var(--line)); color: var(--brand); font-weight: 600; }
+.bar > i { background: var(--brand); }
+.splash-bar i { background: var(--brand); }
+
+/* boutons : à plat */
+.btn { border-radius: 6px; font-weight: 600; }
+.btn.orange { background: var(--action); box-shadow: none; }
+.btn.blue { background: var(--brand); box-shadow: none; }
+.btn.orange:not(:disabled):hover, .btn.blue:not(:disabled):hover { filter: brightness(.94); box-shadow: none; }
+
+/* écran de chargement, menu */
+.splash-mark { background: var(--brand); box-shadow: none; border-radius: 12px; animation: none; }
+.splash-name { font-family: var(--serif); font-weight: 600; }
+.drawer-panel { border-radius: 0; box-shadow: 1px 0 0 var(--line), 12px 0 30px rgba(0, 0, 0, .12); background: var(--surface); }
+.drawer-head b { font-family: var(--serif); font-weight: 600; }
+.drawer nav button { border-radius: 6px; font-weight: 500; }
+.drawer nav button.on { background: color-mix(in srgb, var(--brand) 10%, var(--surface)); color: var(--fg); box-shadow: inset 3px 0 0 var(--brand); }
+.drawer nav button.on svg { color: var(--brand); } .drawer nav button.on small { color: var(--muted); }
+.drawer.open nav button { animation: none; }
+
+/* coupes, frise, planning */
+.hans h4 { font-family: var(--serif); font-weight: 600; font-size: 22px; color: var(--fg); animation: none; }
+.hans h5, .m3d-facts h5, .m3d-side h4, .frise-wk h4 { letter-spacing: .02em; text-transform: none; font-size: 14px; }
+.frise-wk h4 { font-family: var(--serif); font-size: 18px; color: var(--fg); }
+.frise-wk ol { border-left-width: 2px; }
+.cal-head h3, .plan-day h4 { font-family: var(--serif); font-weight: 600; }
+.cal-day.today b { background: var(--fg); color: var(--surface); }
+.cal-day.sel { box-shadow: inset 0 0 0 1.5px var(--brand); }
+.plan-item { border-left-width: 3px; }
+
+/* animations plus discrètes */
+.cards > *, .home > * { animation-name: fadeIn; animation-duration: .3s; }
+#app > * { animation-duration: .25s; }
+.hfig img { min-height: 220px; }
 </style>
 </head>
 <body>
