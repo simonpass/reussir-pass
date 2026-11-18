@@ -307,6 +307,16 @@
     const ds = stages.map(st => dayNum(st[0]));
     return W.stages.filter(x => { const d = dayNum(x.day); let best = 0; ds.forEach((v, k) => { if (Math.abs(v - d) < Math.abs(ds[best] - d) || (Math.abs(v - d) === Math.abs(ds[best] - d) && v > ds[best])) best = k; }); return best === i; }).flatMap(x => x.events.map(e => Object.assign({ day: x.day }, e)));
   }
+  /* familles de structures, pour n'afficher que certaines parties (combinables) */
+  const FAM = [
+    ['neural', 'Neural', ['np', 'ccn', 'tn']],
+    ['meso', 'Mésoblaste', ['meso', 'mig', 'mpa', 'mint', 'mlat', 'soma', 'coeli', 'som', 'card', 'ilots', 'pron', 'meson', 'coeur', 'mesx']],
+    ['axe', 'Ligne primitive & chorde', ['lp', 'hn', 'cc', 'pch', 'cne', 'ch', 'ppc']],
+    ['ecto', 'Ectoblaste', ['ecto', 'epi']],
+    ['ento', 'Entoblaste', ['ento', 'hyp', 'vit', 'arcs', 'mph', 'mcl', 'mpc']],
+    ['annexes', 'Annexes & cavités', ['amn', 'lec1', 'lec2', 'mag', 'coel', 'ped', 'all', 'blc']],
+    ['oeuf', 'Œuf & trophoblaste', ['zp', 'zp2', 'zyg', 'mor', 'troph', 'mci', 'tro', 'ct', 'sct', 'lac', 'plug', 'endo']]
+  ];
   /* ---------------- visionneuse ---------------- */
   let cur = null;
   function stop() { if (cur) { cancelAnimationFrame(cur.raf); cur.renderer.dispose(); window.removeEventListener('resize', cur.onResize); cur = null; } }
@@ -315,9 +325,11 @@
     const w = WEEKS[wi]; const esc = (opts && opts.esc) || (s => s);
     host.innerHTML = `<div class="m3d">
       <div class="m3d-stage"><div class="m3d-canvas" id="m3dCanvas"><div class="m3d-load">Chargement du modèle…</div></div>
-        <div class="m3d-tools"><button class="btn ghost sm" id="m3dCut" aria-pressed="false">Coupe</button>${w.key === 's3' ? '<button class="btn ghost sm" id="m3dSpread" aria-pressed="false">Écarter les feuillets</button>' : ''}<button class="btn ghost sm" id="m3dPlay" aria-pressed="false">▶ Lecture</button><button class="btn ghost sm" id="m3dReset">Recentrer</button></div></div>
+        <div class="m3d-tools"><button class="btn ghost sm" id="m3dCut" aria-pressed="false">Coupe</button>${w.key === 's3' ? '<button class="btn ghost sm" id="m3dSpread" aria-pressed="false">Écarter les feuillets</button>' : ''}<button class="btn ghost sm on" id="m3dHl" aria-pressed="true">✦ Nouveautés</button><button class="btn ghost sm" id="m3dPlay" aria-pressed="false">▶ Lecture</button><button class="btn ghost sm" id="m3dReset">Recentrer</button></div></div>
       <div class="m3d-days" role="tablist">${w.stages.map((st, i) => `<button role="tab" data-st="${i}"><b>${esc(st[0])}</b><span>${esc(st[1])}</span></button>`).join('')}</div>
+      <div class="m3d-new" id="m3dNew" aria-live="polite"></div>
       <div class="m3d-info" id="m3dInfo"><b>Touchez une structure</b><span>ou choisissez-la dans la légende.</span></div>
+      <div class="m3d-filter" id="m3dFilter"></div>
       <div class="m3d-legend" id="m3dLegend"></div>
       <div class="m3d-side"><section class="m3d-figs"><h4>Schémas du cours</h4><div id="m3dFigs"></div></section><section class="m3d-ann"><h4>Ce jour, dans les annales</h4><ul id="m3dEvents"></ul></section></div>
       <p class="note-src">${esc(w.note)} Faites tourner avec un doigt, zoomez en pinçant. Légendes d’après le cours d’embryologie (UE5, Pr Labrune) ; « Ce qui tombe aux annales » et « Ce jour, dans les annales » : phrases copiées des corrections d’annales et de banques de QCM. Couleurs : ectoblaste bleu, mésoblaste rouge, entoblaste jaune.</p>
@@ -336,21 +348,46 @@
     reg.forEach(g => { if (g.userData.id === 'zyg') g.userData.noBirth = true; });
     function born(g) { if (g.userData.noBirth) return; g.userData.meshes.forEach(o => { if (g.userData.meshes.length > 1) o.position.copy(g.userData.center); o.scale.copy(o.userData.baseScale).multiplyScalar(.55); }); }
     function animate() {
+      const pulse = .45 + .4 * Math.sin(performance.now() / 260);
       reg.forEach(g => {
-        const tgt = g.userData.show(stage) ? 1 : 0; const a = g.userData.a += (tgt - g.userData.a) * .1;
+        const tgt = g.userData.show(stage) ? (passes(g) ? 1 : (ghost ? .1 : 0)) : 0; const a = g.userData.a += (tgt - g.userData.a) * .1;
         g.visible = a > .01;
         if (!g.visible) return;
         g.userData.meshes.forEach(o => {
           const op = o.userData.baseOp * a; o.material.opacity = op; const tr = o.userData.baseOp < 1 || a < .99; if (o.material.transparent !== tr) { o.material.transparent = tr; o.material.needsUpdate = true; } o.material.depthWrite = op >= .6;
           if (!g.userData.noBirth) { o.position.lerp(o.userData.home, .09); o.scale.lerp(o.userData.baseScale, .09); }
+          if (o.material.emissive) { if (sel === g.userData.id) o.material.emissive.setHex(0x444444); else if (hl && newIds.has(g.userData.id) && passes(g)) o.material.emissive.setRGB(.55 * pulse, .3 * pulse, 0); else o.material.emissive.setHex(0); }
         });
       });
     }
     const clip = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
-    let stage = 0, sel = null, cut = false;
+    let stage = 0, sel = null, cut = false, ghost = true, hl = true, newIds = new Set(), goneIds = [];
+    const filt = new Set(), passes = g => !filt.size || filt.has(g.userData.id);
     const legend = host.querySelector('#m3dLegend'), info = host.querySelector('#m3dInfo');
-    function visibleParts() { return reg.filter(p => p.userData.show(stage)); }
-    function drawLegend() { legend.innerHTML = visibleParts().map(p => `<button data-p="${esc(p.userData.id)}" class="${sel === p.userData.id ? 'on' : ''}"><i style="background:#${firstColor(p)}"></i>${esc(p.userData.name)}</button>`).join(''); legend.querySelectorAll('[data-p]').forEach(b => b.onclick = () => select(b.dataset.p)); }
+    function visibleParts() { return reg.filter(p => p.userData.show(stage) && passes(p)); }
+    const shownParts = () => reg.filter(p => p.userData.show(stage));
+    const filterBox = host.querySelector('#m3dFilter'), newBox = host.querySelector('#m3dNew');
+    function drawLegend() {
+      legend.innerHTML = shownParts().map(p => { const id = p.userData.id, vis = passes(p); return `<span class="m3d-li${vis ? '' : ' off'}${newIds.has(id) ? ' new' : ''}"><button class="m3d-eye" data-v="${esc(id)}" aria-pressed="${filt.has(id)}" aria-label="${filt.has(id) ? 'Retirer de la sélection' : 'Afficher seulement cette partie (combinable)'} : ${esc(p.userData.name)}">${filt.has(id) ? '✓' : ''}</button><button data-p="${esc(id)}" class="${sel === id ? 'on' : ''}"><i style="background:#${firstColor(p)}"></i>${esc(p.userData.name)}</button></span>`; }).join('');
+      legend.querySelectorAll('[data-p]').forEach(b => b.onclick = () => select(b.dataset.p));
+      legend.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { const id = b.dataset.v; filt.has(id) ? filt.delete(id) : filt.add(id); drawLegend(); });
+      const ids = shownParts().map(p => p.userData.id), fams = FAM.filter(f => f[2].some(x => ids.includes(x)));
+      filterBox.innerHTML = `<span class="m3d-fl">Afficher :</span><button data-f="*" class="${filt.size ? '' : 'on'}" aria-pressed="${!filt.size}">Tout</button>${fams.map(f => { const here = f[2].filter(x => ids.includes(x)), on = here.every(x => filt.has(x)); return `<button data-f="${f[0]}" class="${on ? 'on' : ''}" aria-pressed="${on}">${esc(f[1])}</button>`; }).join('')}${filt.size ? `<label class="m3d-ghost"><input type="checkbox" ${ghost ? 'checked' : ''}> Garder le reste en transparence</label>` : ''}`;
+      filterBox.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
+        if (b.dataset.f === '*') filt.clear();
+        else { const here = FAM.find(f => f[0] === b.dataset.f)[2].filter(x => ids.includes(x)), on = here.every(x => filt.has(x)); here.forEach(x => on ? filt.delete(x) : filt.add(x)); }
+        if (sel && !passes(reg.find(p => p.userData.id === sel))) select(sel); drawLegend();
+      });
+      const gb = filterBox.querySelector('.m3d-ghost input'); if (gb) gb.onchange = () => { ghost = gb.checked; };
+    }
+    function drawNew(prev) {
+      const st = w.stages[stage], name = id => (reg.find(p => p.userData.id === id) || { userData: { name: id } }).userData.name;
+      if (prev < 0) { newBox.innerHTML = `<b>${esc(st[0])}</b><span>${esc(st[1])}</span>`; return; }
+      const chips = (l, cl) => l.map(id => `<button class="m3d-chip ${cl}" data-c="${esc(id)}">${esc(name(id))}</button>`).join('');
+      newBox.innerHTML = `<b>${esc(w.stages[prev][0])} → ${esc(st[0])}</b><span>${esc(st[1])}</span>${newIds.size ? `<div><small>Apparaît :</small>${chips([...newIds], 'plus')}</div>` : ''}${goneIds.length ? `<div><small>Disparaît :</small>${chips(goneIds, 'moins')}</div>` : ''}`;
+      newBox.querySelectorAll('.plus').forEach(b => b.onclick = () => select(b.dataset.c));
+      newBox.classList.remove('flash'); void newBox.offsetWidth; newBox.classList.add('flash');
+    }
     function firstColor(p) { let c = '888888'; p.traverse(o => { if (o.isMesh && c === '888888') c = o.material.color.getHexString(); }); return c; }
     function select(id) {
       sel = sel === id ? null : id; const p = reg.find(x => x.userData.id === sel);
@@ -368,13 +405,14 @@
       const ev = eventsFor(w.key, w.stages, stage);
       evBox.innerHTML = ev.length ? ev.slice(0, 8).map(e => `<li><b>${esc(e.day)}</b> « ${esc(e.t)} »<small>${esc(e.s)}</small></li>`).join('') : '<li class="note-src">Aucune question d’annales datée de ce jour.</li>';
     }
-    function setStage(i) { const prev = stage; stage = i; if (i >= 0) setTimeout(drawSide, 0); host.querySelectorAll('[data-st]').forEach(b => { b.classList.toggle('on', +b.dataset.st === i); if (+b.dataset.st === i) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }); reg.forEach(g => { if (g.userData.show(i) && (!g.userData.show(prev) || prev === i && g.userData.a < .5)) born(g); }); if (sel && !reg.find(p => p.userData.id === sel).userData.show(i)) select(sel); drawLegend(); }
+    function setStage(i) { const prev = stage; stage = i; if (i >= 0) setTimeout(drawSide, 0); host.querySelectorAll('[data-st]').forEach(b => { b.classList.toggle('on', +b.dataset.st === i); if (+b.dataset.st === i) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }); reg.forEach(g => { if (g.userData.show(i) && (!g.userData.show(prev) || prev === i && g.userData.a < .5)) born(g); }); const ref = i - 1; if (ref >= 0) { newIds = new Set(reg.filter(g => g.userData.show(i) && !g.userData.show(ref)).map(g => g.userData.id)); goneIds = reg.filter(g => !g.userData.show(i) && g.userData.show(ref)).map(g => g.userData.id); } else { newIds = new Set(); goneIds = []; } if (sel && !reg.find(p => p.userData.id === sel).userData.show(i)) select(sel); drawLegend(); drawNew(i - 1); }
     let play = null; const pb = host.querySelector('#m3dPlay');
     function setPlay(on) { clearInterval(play); play = null; pb.classList.toggle('on', on); pb.setAttribute('aria-pressed', on); pb.textContent = on ? '❚❚ Pause' : '▶ Lecture'; if (on) { play = setInterval(() => { if (!document.body.contains(box)) { clearInterval(play); return; } setStage((stage + 1) % w.stages.length); }, 2600); } }
     pb.onclick = () => { if (!play && stage === w.stages.length - 1) setStage(0); setPlay(!play); };
     host.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { setPlay(false); setStage(+b.dataset.st); });
     const cb = host.querySelector('#m3dCut'); cb.onclick = () => { cut = !cut; cb.setAttribute('aria-pressed', cut); cb.classList.toggle('on', cut); scene.traverse(o => { if (o.isMesh) { o.material.clippingPlanes = cut ? [clip] : []; o.material.clipShadows = true; o.material.side = cut ? THREE.DoubleSide : o.material.side; o.material.needsUpdate = true; } }); };
     const sb = host.querySelector('#m3dSpread'); if (sb) { let on = false; sb.onclick = () => { on = !on; sb.classList.toggle('on', on); sb.setAttribute('aria-pressed', on); ui.spread && ui.spread(on ? 1 : 0); }; }
+    const hb = host.querySelector('#m3dHl'); hb.onclick = () => { hl = !hl; hb.classList.toggle('on', hl); hb.setAttribute('aria-pressed', hl); };
     host.querySelector('#m3dReset').onclick = () => { cam.position.set(...home); ctl.target.set(0, w.key === 's2' ? -.3 : 0, 0); };
     // sélection au toucher (un appui court, pas un glissement)
     const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
