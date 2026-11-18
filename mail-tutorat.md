@@ -1,4 +1,4 @@
-# Mail au Tutorat Lyon-Est (validé par Simon le 18/11/2026, pas encore envoyé)
+# Mail au Tutorat Lyon-Est (envoyé le 18/11/2026)
 
 **À :** tutorat.lyonest@univ-lyon1.fr
 **Cc :** tutoratpaceslyonest@gmail.com
