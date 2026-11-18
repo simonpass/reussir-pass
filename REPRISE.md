@@ -1,0 +1,40 @@
+# Reprise du projet (passage de relais entre sessions Claude)
+
+À lire en premier, avec `CLAUDE.md`. État au 18/11/2026.
+
+## Le projet
+- Site de révision PASS (Lyon-Est) pour Christophe Pierre, ami de Simon Guerra (propriétaire).
+- Dépôt : https://github.com/simonpass/reussir-pass (branche `main`, site statique dans `site/`).
+- Mise en ligne : GitHub Pages via `.github/workflows/pages.yml`. URL technique : https://simonpass.github.io/reussir-pass.
+- Domaine : `reussir-pass.fr`, acheté chez OVH (compte de Simon ; Simon se connecte lui-même, ne jamais saisir de mot de passe ni de code).
+- Ancien hébergement : Netlify, https://medecine-facile.netlify.app (site id `217e40f1-6bde-4f65-8ad8-1c67db02ba9f`). Christophe l'utilise encore, et ses progrès sont dans le navigateur (localStorage).
+
+## Déjà fait
+- Le site est complet : annales UE1–UE5 (UE6 masquée par `HIDDEN_UE`), banques de QCM, BDQCM par matière, import de documents, flashcards (touches C/V/B/N), araignée de compétences et modèles 3D des 4 semaines (DSE) avec schémas du cours et annales.
+- La zone DNS OVH a été remplacée le 18/11/2026 :
+  - A @ → 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153 ;
+  - CNAME www → simonpass.github.io. ;
+  - MX et SPF OVH conservés.
+- Le domaine personnalisé GitHub Pages est réglé sur `reussir-pass.fr` (`https_enforced` encore à false).
+- Ticket OVH CS17180422 : annulation de la commande en double n° 263780401 (5,99 €), à suivre. La commande gardée est la n° 263780358.
+
+## Reste à faire, dans l'ordre
+1. Quand le DNS répond (`nslookup reussir-pass.fr` → 185.199.x.153, jusqu'à 24 h) :
+   - `gh api -X PUT repos/simonpass/reussir-pass/pages -F https_enforced=true` (possible seulement une fois le certificat émis) ;
+   - vérifier https://reussir-pass.fr.
+2. Déménagement des progrès (issue #1) :
+   - mettre `const MOVE_TO = 'https://reussir-pass.fr';` dans `site/index.html` (branche, PR, fusion) ;
+   - publier la même version sur Netlify : `npx netlify-cli deploy --prod --no-build --dir site --site 217e40f1-6bde-4f65-8ad8-1c67db02ba9f` ;
+   - Christophe clique sur « Emporter ma progression » (transfert par `#transfert=`, déjà testé).
+3. Ensuite, désactiver ou supprimer le site Netlify (issue #2), avec l'accord de Simon.
+4. En attente :
+   - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
+   - mail au Tutorat Lyon-Est en pause ;
+   - idées d'abonnement payant et d'application mobile.
+
+## Méthode de travail
+- Une issue, puis une branche `feature/...` ou `fix/...`, puis une PR, puis la fusion après accord de Simon.
+- Contenu toujours **mot pour mot** des sources.
+- Tester en 820×1180 (format iPad).
+- Simon veut des messages courts, sans commentaire sur chaque étape.
+- Ne jamais envoyer de mail ou de ticket sans l'accord explicite de Simon sur le texte.

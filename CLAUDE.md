@@ -5,3 +5,4 @@
 - Façon de travailler demandée par l'utilisateur : une **issue** par demande → une **branche** `feature/...` ou `fix/...` → une **pull request** qui ferme l'issue → fusion dans `main` après accord → mise en ligne automatique (GitHub Pages, `.github/workflows/pages.yml`).
 - Les données de l'élève sont dans le `localStorage` (clés `ue4:*`) et IndexedDB : ne jamais changer ces clés sans migration.
 - Tester au format iPad (820×1180) avant de proposer la fusion.
+- Pour reprendre le travail (nouvelle session ou autre compte), lire `REPRISE.md`.
