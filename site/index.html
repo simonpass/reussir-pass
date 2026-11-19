@@ -806,6 +806,14 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .m3d-lvl { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; gap: 4px; padding: 8px 12px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--muted); }
 .m3d-lvl[hidden] { display: none; }
 .m3d-lvl input { width: 100%; accent-color: var(--brand); height: 28px; }
+/* correction de la réponse attendue */
+.fixrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; margin-top: 6px; }
+.fixbtn { background: none; border: 0; padding: 6px 2px; color: var(--muted); font-size: 13.5px; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+.fixbtn:hover { color: var(--brand); }
+.fixnote { font-size: 13.5px; color: var(--mid); margin-right: auto; }
+.tblwrap.fixing { border-color: var(--brand); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 25%, transparent); }
+.fixck { cursor: pointer; border: 2px solid var(--brand); background: var(--surface); width: 30px; height: 30px; border-radius: 6px; }
+.fixck.on { background: var(--brand); color: #fff; }
 /* mes flashcards */
 .addcard { border-style: dashed; background: transparent; cursor: pointer; }
 .card-row { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
@@ -894,7 +902,16 @@ let S = null;                            // current session
 let timerId = null;
 
 let byId = {};
-function rebuild() { DATA = BASE.concat(IMPORTS); byId = Object.fromEntries(DATA.map(e => [e.id, e])); }
+function rebuild() { DATA = BASE.concat(IMPORTS); byId = Object.fromEntries(DATA.map(e => [e.id, e])); DATA.forEach(e => (e.questions || []).forEach((q, k) => { q._k = e.id + '#' + k; })); applyFixes(); }
+/* réponses attendues corrigées par l'élève : personnelles (cet appareil + son compte), jamais partagées */
+function applyFixes() {
+  const F = store.get('fix', {});
+  DATA.forEach(e => (e.questions || []).forEach(q => {
+    const f = F[q._k];
+    if (f && Array.isArray(f.a)) { if (!q.answer0) q.answer0 = (q.answer || []).slice(); q.answer = f.a.slice(); }
+    else if (q.answer0) { q.answer = q.answer0; delete q.answer0; }
+  }));
+}
 rebuild();
 const ueOf = e => e.ue || 'UE4';
 const UES = [...new Set(BASE.map(ueOf))].sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
@@ -926,7 +943,7 @@ const cls = r => r == null ? 'na' : r.pts >= 1 ? 'ok' : r.pts > 0 ? 'mid' : 'bad
 /* ---------- home ---------- */
 const CAT_ORDER = ['Contrôle continu', 'Contrôle terminal', 'Épreuve terminale', 'Rattrapage', 'Annales classées'];
 function home() {
-  stopTimer();
+  stopTimer(); applyFixes();
   S = null; FC = null;
   if (view === 'fc') return fcHome();
   if (view === 'm3d') return m3dHome();
@@ -2028,6 +2045,24 @@ function finish() {
   setTimeout(() => renderCorrection(done), 900);
 }
 
+/* ---------- correction de la réponse attendue par l'élève ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-fix]'); if (!b || !b.dataset.fix) return;
+  const row = b.closest('.fixrow'), wrap = row && row.previousElementSibling; if (!wrap || !wrap.classList.contains('tblwrap')) return;
+  const qk = b.dataset.fix, i = qk.lastIndexOf('#'), q = findQ(qk.slice(0, i), +qk.slice(i + 1)); if (!q) return;
+  const set = new Set(q.answer || []);
+  wrap.classList.add('fixing');
+  wrap.querySelectorAll('tbody tr').forEach(tr => {
+    const L = tr.querySelector('td.L').textContent.trim(), td = tr.children[1];
+    const draw = () => { td.innerHTML = `<button class="ck fixck ${set.has(L) ? 'on' : ''}" aria-pressed="${set.has(L)}" aria-label="Item ${esc(L)} juste">${set.has(L) ? CHECK : ''}</button>`; td.firstChild.onclick = () => { set.has(L) ? set.delete(L) : set.add(L); draw(); }; };
+    draw();
+  });
+  row.innerHTML = `<span class="fixnote">Cochez les items justes, puis enregistrez. Cette correction n’est visible que par vous.</span><button class="btn blue" data-fixsave>Enregistrer</button>${q.answer0 ? '<button class="btn" data-fixreset>Rétablir l’original</button>' : ''}<button class="btn" data-fixcancel>Annuler</button>`;
+  const done = F => { store.set('fix', F); applyFixes(); const y = window.scrollY; if (S && S.qs && document.querySelector('.scorehead')) renderCorrection(S); else if (S) renderExam(); window.scrollTo(0, y); };
+  row.querySelector('[data-fixsave]').onclick = () => { const F = store.get('fix', {}), orig = (q.answer0 || q.answer || []).slice().sort().join(''), a = [...set].sort(); if (a.join('') === orig) delete F[qk]; else F[qk] = { a, t: Date.now() }; done(F); toast('Correction enregistrée pour vous.'); };
+  const rs = row.querySelector('[data-fixreset]'); if (rs) rs.onclick = () => { const F = store.get('fix', {}); delete F[qk]; done(F); toast('Réponse d’origine rétablie.'); };
+  row.querySelector('[data-fixcancel]').onclick = () => done(store.get('fix', {}));
+});
 /* ---------- correction ---------- */
 function correctionHtml(q, sel, res) {
   const has = q.items && q.items.length;
@@ -2039,7 +2074,8 @@ function correctionHtml(q, sel, res) {
         const exp = (q.answer || []).includes(it.letter), got = s.has(it.letter), dis = exp !== got;
         return `<tr><td class="L">${esc(it.letter)}</td><td><span class="ck ${exp ? 'on' : ''}">${exp ? CHECK : ''}</span></td><td><span class="ck ${got ? 'on' : ''}">${got ? CHECK : ''}</span></td>
           <td class="${dis ? 'dis-yes' : 'dis-no'}">${dis ? 'Oui (+1)' : 'Non'}</td><td class="txt">${esc(it.text)}</td></tr>`;
-      }).join('')}</tbody></table></div>` : ''}
+      }).join('')}</tbody></table></div>
+      <div class="fixrow">${q.answer0 ? `<span class="fixnote">Réponse attendue corrigée par vous (original : ${esc(q.answer0.join(' ') || 'aucune')})</span>` : ''}<button class="fixbtn" data-fix="${esc(q._k || '')}">✎ ${q.answer0 ? 'Modifier ma correction' : 'Corriger la réponse attendue'}</button></div>` : ''}
     <div class="detail"><h4>Correction</h4>
       ${has ? `<div class="dl">${q.items.map(it => {
         const c = (q.corrections || {})[it.letter] || {};
