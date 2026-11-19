@@ -380,7 +380,8 @@
       <div class="m3d-filter" id="m3dFilter"></div>
       <div class="m3d-legend" id="m3dLegend"></div>
       <div class="m3d-stage"><div class="m3d-canvas" id="m3dCanvas"><div class="m3d-load">Chargement du modèle…</div></div>
-        <div class="m3d-tools"><button class="btn ghost sm" id="m3dCut" aria-pressed="false">Coupe</button>${w.key === 's3' ? '<button class="btn ghost sm" id="m3dSpread" aria-pressed="false">Écarter les feuillets</button>' : ''}<button class="btn ghost sm on" id="m3dHl" aria-pressed="true">✦ Nouveautés</button><button class="btn ghost sm" id="m3dPlay" aria-pressed="false">▶ Lecture</button><button class="btn ghost sm" id="m3dReset">Recentrer</button></div></div>
+        <label class="m3d-lvl" id="m3dLvl" hidden><span id="m3dLvlT">Niveau de coupe</span><input type="range" min="0" max="100" value="50" aria-label="Déplacer le plan de coupe"></label>
+        <div class="m3d-tools"><span class="m3d-cutseg" role="group" aria-label="Coupe"><button class="btn ghost sm on" data-cut="" aria-pressed="true">Entier</button><button class="btn ghost sm" data-cut="t" aria-pressed="false">Coupe transversale</button><button class="btn ghost sm" data-cut="s" aria-pressed="false">Coupe sagittale</button></span>${w.key === 's3' ? '<button class="btn ghost sm" id="m3dSpread" aria-pressed="false">Écarter les feuillets</button>' : ''}<button class="btn ghost sm on" id="m3dHl" aria-pressed="true">✦ Nouveautés</button><button class="btn ghost sm" id="m3dPlay" aria-pressed="false">▶ Lecture</button><button class="btn ghost sm" id="m3dReset">Recentrer</button></div></div>
       <div class="m3d-days" role="tablist">${w.stages.map((st, i) => `<button role="tab" data-st="${i}"><b>${esc(st[0])}</b><span>${esc(st[1])}</span></button>`).join('')}</div>
       <div class="m3d-info" id="m3dInfo"><b>Touchez une structure</b><span>ou choisissez-la dans la légende.</span></div>
       <div class="m3d-new" id="m3dNew" aria-live="polite"></div>
@@ -471,7 +472,26 @@
     function setPlay(on) { clearInterval(play); play = null; pb.classList.toggle('on', on); pb.setAttribute('aria-pressed', on); pb.textContent = on ? '❚❚ Pause' : '▶ Lecture'; if (on) { play = setInterval(() => { if (!document.body.contains(box)) { clearInterval(play); return; } setStage((stage + 1) % w.stages.length); }, 2600); } }
     pb.onclick = () => { if (!play && stage === w.stages.length - 1) setStage(0); setPlay(!play); };
     host.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { setPlay(false); setStage(+b.dataset.st); });
-    const cb = host.querySelector('#m3dCut'); cb.onclick = () => { cut = !cut; cb.setAttribute('aria-pressed', cut); cb.classList.toggle('on', cut); scene.traverse(o => { if (o.isMesh) { o.material.clippingPlanes = cut ? [clip] : []; o.material.clipShadows = true; o.material.side = cut ? THREE.DoubleSide : o.material.side; o.material.needsUpdate = true; } }); };
+    /* coupes : transversale = plan perpendiculaire à l'axe céphalo-caudal (z) ; sagittale = plan médian (x) ; curseur = position du plan */
+    const lvl = host.querySelector('#m3dLvl'), lvlIn = lvl.querySelector('input'), lvlT = host.querySelector('#m3dLvlT');
+    let cutMode = '';
+    const extent = () => { const b = new THREE.Box3(); reg.forEach(g => { if (g.visible) b.expandByObject(g); }); return b.isEmpty() ? new THREE.Box3(new THREE.Vector3(-1.5, -1.5, -1.5), new THREE.Vector3(1.5, 1.5, 1.5)) : b; };
+    function placeCut() {
+      if (!cutMode) return; const b = extent(), k = lvlIn.value / 100, ax = cutMode === 't' ? 'z' : 'x';
+      const v = b.min[ax] + (b.max[ax] - b.min[ax]) * (.04 + .92 * k);
+      clip.normal.set(cutMode === 's' ? -1 : 0, 0, cutMode === 't' ? -1 : 0); clip.constant = v;
+      lvlT.textContent = cutMode === 't' ? (k < .34 ? 'Niveau : côté céphalique' : k > .66 ? 'Niveau : côté caudal' : 'Niveau : milieu') : (k < .34 ? 'Niveau : côté gauche' : k > .66 ? 'Niveau : côté droit' : 'Niveau : plan médian');
+    }
+    function setCut(m) {
+      cutMode = m; cut = !!m;
+      host.querySelectorAll('[data-cut]').forEach(b => { const on = b.dataset.cut === m; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      lvl.hidden = !m; lvlIn.value = 50; placeCut();
+      scene.traverse(o => { if (o.isMesh) { if (o.userData.side0 === undefined) o.userData.side0 = o.material.side; o.material.clippingPlanes = cut ? [clip] : []; o.material.clipShadows = true; o.material.side = cut ? THREE.DoubleSide : o.userData.side0; o.material.needsUpdate = true; } });
+      if (m) { const d = cam.position.distanceTo(ctl.target), t = ctl.target; ctl.autoRotate = false; idle = performance.now();
+        if (m === 't') cam.position.set(t.x + d * .18, t.y + d * .35, t.z + d * .92); else cam.position.set(t.x + d * .92, t.y + d * .35, t.z + d * .18); }
+    }
+    host.querySelectorAll('[data-cut]').forEach(b => b.onclick = () => setCut(b.dataset.cut));
+    lvlIn.oninput = placeCut;
     const sb = host.querySelector('#m3dSpread'); if (sb) { let on = false; sb.onclick = () => { on = !on; sb.classList.toggle('on', on); sb.setAttribute('aria-pressed', on); ui.spread && ui.spread(on ? 1 : 0); }; }
     const hb = host.querySelector('#m3dHl'); hb.onclick = () => { hl = !hl; hb.classList.toggle('on', hl); hb.setAttribute('aria-pressed', hl); };
     host.querySelector('#m3dReset').onclick = () => { cam.position.set(...home); ctl.target.set(0, w.key === 's2' ? -.3 : 0, 0); };
@@ -482,7 +502,7 @@
     renderer.domElement.addEventListener('pointerup', e => {
       if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return; const r = renderer.domElement.getBoundingClientRect();
       ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ptr, cam);
-      const hits = ray.intersectObjects(visibleParts(), true).filter(h => h.object.visible && (!cut || h.point.z <= .001) && h.object.material.opacity > .2);
+      const hits = ray.intersectObjects(visibleParts(), true).filter(h => h.object.visible && (!cut || clip.distanceToPoint(h.point) >= -.001) && h.object.material.opacity > .2);
       const opaque = hits.find(h => h.object.material.opacity >= .5) || hits[0];
       if (opaque) select(opaque.object.userData.part);
     });
@@ -499,7 +519,7 @@
     const onResize = () => { const W = box.clientWidth, H = box.clientHeight; renderer.setSize(W, H); cam.aspect = W / H; cam.updateProjectionMatrix(); };
     window.addEventListener('resize', onResize); onResize();
     stage = -1; setStage(Math.min(Math.max(+(opts && opts.stage) || 0, 0), w.stages.length - 1));
-    const loop = () => { if (!document.body.contains(box)) { stop(); return; } const t = performance.now() / 1000; if (!ctl.autoRotate && idle && performance.now() - idle > 7000) ctl.autoRotate = true; ctl.update(); api && api.tick && api.tick(stage, t); animate(); renderer.render(scene, cam); cur.raf = requestAnimationFrame(loop); };
+    const loop = () => { if (!document.body.contains(box)) { stop(); return; } const t = performance.now() / 1000; if (!cut && !ctl.autoRotate && idle && performance.now() - idle > 7000) ctl.autoRotate = true; ctl.update(); api && api.tick && api.tick(stage, t); animate(); renderer.render(scene, cam); cur.raf = requestAnimationFrame(loop); };
     cur = { renderer, onResize, onKey, raf: 0 }; loop();
   }
   window.Model3D = { WEEKS: WEEKS.map(w => ({ key: w.key, title: w.title, sub: w.sub, stages: w.stages })), open, stop };
