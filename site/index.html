@@ -818,6 +818,9 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .tk { margin-bottom: 12px; } .tk-stem { margin: 0; white-space: pre-wrap; }
 .tk-items { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 4px; font-size: 14.5px; } .tk-items b { color: var(--brand); margin-right: 4px; }
 .tk-props { display: grid; gap: 8px; } .tk-prop { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; }
+.detail.fixing { outline: 2px solid color-mix(in srgb, var(--brand) 40%, transparent); outline-offset: 4px; border-radius: 6px; }
+.fixtx { width: 100%; font: inherit; font-size: 15px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; }
+.fixmine { color: var(--mid); font-size: 12.5px; }
 /* mes flashcards */
 .addcard { border-style: dashed; background: transparent; cursor: pointer; }
 .card-row { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
@@ -915,8 +918,9 @@ function applyFixes() {
   DATA.forEach(e => (e.questions || []).forEach(q => {
     const f = F[q._k], g = G[q._k], a = f && Array.isArray(f.a) ? f.a : g && g.statut === 'validée' && Array.isArray(g.answer) ? g.answer : null;
     if (q.answer0) { q.answer = q.answer0; delete q.answer0; }
-    delete q.fixSrc;
-    if (a) { q.answer0 = (q.answer || []).slice(); q.answer = a.slice(); q.fixSrc = f && Array.isArray(f.a) ? 'perso' : 'global'; }
+    delete q.fixSrc; delete q.ctext;
+    if (a && (a.slice().sort().join('') !== (q.answer || []).slice().sort().join('') || (f && f.c))) { q.answer0 = (q.answer || []).slice(); q.answer = a.slice(); q.fixSrc = f && Array.isArray(f.a) ? 'perso' : 'global'; }
+    if (f && f.c) q.ctext = f.c;
   }));
 }
 async function refreshDecisions() {
@@ -2112,19 +2116,28 @@ document.addEventListener('click', e => {
   const qk = b.dataset.fix, i = qk.lastIndexOf('#'), q = findQ(qk.slice(0, i), +qk.slice(i + 1)); if (!q) return;
   const set = new Set(q.answer || []);
   wrap.classList.add('fixing');
+  // encadré « Correction » : verdict recalculé en direct + texte modifiable pour chaque item
+  const det = row.nextElementSibling, dl = det && det.querySelector('.dl');
+  const orig = L => (((q.corrections || {})[L] || {}).text || '');
+  const verdicts = () => { if (dl) dl.querySelectorAll('[data-dl]').forEach(s => { const on = set.has(s.dataset.dl); s.className = 'vf ' + (on ? 'V' : 'F'); s.textContent = s.dataset.dl + ' ' + (on ? 'VRAI' : 'FAUX'); }); };
+  if (dl) { det.classList.add('fixing'); dl.querySelectorAll('[data-dl]').forEach(s => { const L = s.dataset.dl, tx = s.nextElementSibling, cur = q.ctext && q.ctext[L] != null ? q.ctext[L] : orig(L); tx.innerHTML = `<textarea class="fixtx" data-tx="${esc(L)}" rows="2" aria-label="Correction de l’item ${esc(L)}">${esc(cur)}</textarea>`; }); verdicts(); }
   wrap.querySelectorAll('tbody tr').forEach(tr => {
     const L = tr.querySelector('td.L').textContent.trim(), td = tr.children[1];
-    const draw = () => { td.innerHTML = `<button class="ck fixck ${set.has(L) ? 'on' : ''}" aria-pressed="${set.has(L)}" aria-label="Item ${esc(L)} juste">${set.has(L) ? CHECK : ''}</button>`; td.firstChild.onclick = () => { set.has(L) ? set.delete(L) : set.add(L); draw(); }; };
+    const draw = () => { td.innerHTML = `<button class="ck fixck ${set.has(L) ? 'on' : ''}" aria-pressed="${set.has(L)}" aria-label="Item ${esc(L)} juste">${set.has(L) ? CHECK : ''}</button>`; td.firstChild.onclick = () => { set.has(L) ? set.delete(L) : set.add(L); draw(); verdicts(); }; };
     draw();
   });
-  row.innerHTML = `<span class="fixnote">Cochez les items justes, puis enregistrez. Cette correction n’est visible que par vous.</span><button class="btn blue" data-fixsave>Enregistrer</button>${q.fixSrc === 'perso' ? '<button class="btn" data-fixreset>Rétablir</button>' : ''}<button class="btn" data-fixcancel>Annuler</button>`;
+  row.innerHTML = `<span class="fixnote">Cochez les items justes et modifiez si besoin les explications dans l’encadré « Correction », puis enregistrez. Visible seulement par vous.</span><button class="btn blue" data-fixsave>Enregistrer</button>${q.fixSrc === 'perso' ? '<button class="btn" data-fixreset>Rétablir</button>' : ''}<button class="btn" data-fixcancel>Annuler</button>`;
   const done = F => { store.set('fix', F); applyFixes(); const y = window.scrollY; if (S && S.qs && document.querySelector('.scorehead')) renderCorrection(S); else if (S) renderExam(); window.scrollTo(0, y); };
   row.querySelector('[data-fixsave]').onclick = () => {
     const F = store.get('fix', {}), base = q.fixSrc === 'perso' ? (q.answer0 || []) : (q.answer || []), src = (q.fixSrc ? q.answer0 : q.answer) || [], a = [...set].sort();
     const cur = (q.fixSrc === 'global' ? q.answer : base).slice().sort().join('');
-    if (a.join('') === cur) delete F[qk]; else F[qk] = { a, t: Date.now() };
+    const c = {}; if (dl) dl.querySelectorAll('[data-tx]').forEach(t => { const v = t.value.trim(); if (v !== orig(t.dataset.tx).trim()) c[t.dataset.tx] = v; });
+    const hasC = Object.keys(c).length, ansChanged = a.join('') !== cur || (q.fixSrc === 'perso' && a.join('') !== src.slice().sort().join(''));
+    if (!hasC && a.join('') === src.slice().sort().join('')) delete F[qk];
+    else if (!hasC && !ansChanged) delete F[qk];
+    else F[qk] = Object.assign({ a, t: Date.now() }, hasC ? { c } : {});
     done(F);
-    if (window.Compte && window.Compte.user) { if (F[qk]) window.Compte.pushFix(qk, a, src.slice().sort()); else window.Compte.delFix(qk); }
+    if (window.Compte && window.Compte.user) { if (F[qk] && a.join('') !== src.slice().sort().join('')) window.Compte.pushFix(qk, a, src.slice().sort()); else window.Compte.delFix(qk); }
     toast(F[qk] ? 'Correction enregistrée pour vous.' : 'Aucune différence : rien à enregistrer.');
   };
   const rs = row.querySelector('[data-fixreset]'); if (rs) rs.onclick = () => { const F = store.get('fix', {}); delete F[qk]; done(F); if (window.Compte && window.Compte.user) window.Compte.delFix(qk); toast('Correction retirée.'); };
@@ -2146,8 +2159,9 @@ function correctionHtml(q, sel, res) {
     <div class="detail"><h4>Correction</h4>
       ${has ? `<div class="dl">${q.items.map(it => {
         const c = (q.corrections || {})[it.letter] || {};
-        const v = (c.verdict || '').toUpperCase();
-        return `<span class="vf ${v.startsWith('V') ? 'V' : v.startsWith('F') ? 'F' : ''}">${esc(it.letter)} ${esc(c.verdict || '')}</span><span class="tx">${esc(c.text || '')}</span>`;
+        const vd = q.answer0 ? ((q.answer || []).includes(it.letter) ? 'VRAI' : 'FAUX') : (c.verdict || ''), v = vd.toUpperCase();
+        const own = q.ctext && q.ctext[it.letter] != null, tx = own ? q.ctext[it.letter] : (c.text || '');
+        return `<span class="vf ${v.startsWith('V') ? 'V' : v.startsWith('F') ? 'F' : ''}" data-dl="${esc(it.letter)}">${esc(it.letter)} ${esc(vd)}</span><span class="tx">${esc(tx)}${own ? ' <small class="fixmine">(modifié par vous)</small>' : ''}</span>`;
       }).join('')}</div>` : ''}
       ${q.general ? `<div class="general">${esc(q.general)}</div>` : ''}
       ${figHtml(q.correctionFigures)}
