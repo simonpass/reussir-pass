@@ -34,6 +34,10 @@
 - Auth : Site URL https://reussir-pass.fr ; redirections https://reussir-pass.fr/** et http://localhost:8777/** ; confirmation par e-mail activée (envoi gratuit limité à quelques e-mails/heure).
 - Clé de service : `tools/.supabase.json` (non versionné), **à coller par Simon** (Settings → API Keys → Secret key, ou legacy service_role). Claude ne doit pas la lire depuis le tableau de bord.
 
+## Corrections de réponses et tickets
+- Chaque élève peut corriger la réponse attendue d'une question (lien « ✎ Corriger la réponse attendue » sous la correction) : clé `ue4:fix`, personnelle.
+- Connecté, sa correction est aussi envoyée dans la table `corrections` (une ligne par élève et par question). Dès que **2 élèves** ont corrigé la même question, un ticket apparaît dans le menu ☰ → « Tickets de correction » (visible seulement par les admins : table `admins`, Simon). « Valider pour tous » écrit dans `corrections_validees` (lecture publique) : la réponse s'applique à tous les comptes ; la correction perso de chacun reste prioritaire. SQL : `supabase/corrections.sql` (exécuté le 19/11).
+
 ## Traiter les demandes (quand Simon dit « traite les demandes »)
 Rubrique « Mes demandes » : réservée aux comptes ; document (texte extrait dans le navigateur, ou photo) + consigne, rangés dans la table `demandes` ; la réponse n'est visible que par son auteur.
 1. `node tools/demandes.js list` : télécharge les demandes « envoyée » dans `.demandes/<id>/` (non versionné).
