@@ -154,8 +154,19 @@
     return m;
   }
 
+  /* ---------- corrections de réponses : propositions (perso) → tickets → décisions (pour tous) ---------- */
+  async function pushFix(qkey, answer, original) { await init(); if (!user) return; try { await sb.from('corrections').upsert({ user_id: user.id, qkey, answer, original, created_at: new Date().toISOString() }); } catch (e) { console.warn(e); } }
+  async function delFix(qkey) { await init(); if (!user) return; try { await sb.from('corrections').delete().eq('user_id', user.id).eq('qkey', qkey); } catch (e) {} }
+  async function loadDecisions() { await init(); if (!sb) return null; const { data, error } = await sb.from('corrections_validees').select('qkey, statut, answer, original'); return error ? null : data; }
+  let admin = null;
+  async function isAdmin() { await init(); if (!user) return false; if (admin !== null) return admin; const { data } = await sb.from('admins').select('user_id').eq('user_id', user.id).maybeSingle(); return (admin = !!data); }
+  async function allFixes() { await init(); const { data, error } = await sb.from('corrections').select('user_id, qkey, answer, original, created_at'); if (error) throw error; return data || []; }
+  async function decide(qkey, statut, answer, original) { await init(); const { error } = await sb.from('corrections_validees').upsert({ qkey, statut, answer, original, decided_at: new Date().toISOString() }); if (error) throw error; }
+  async function undecide(qkey) { await init(); const { error } = await sb.from('corrections_validees').delete().eq('qkey', qkey); if (error) throw error; }
+  document.addEventListener('compte', () => { admin = null; });
+
   window.Compte = {
-    on: ON, init, open, push, pull, sendDemande, listDemandes, deleteDemande,
+    on: ON, init, open, push, pull, sendDemande, listDemandes, deleteDemande, pushFix, delFix, loadDecisions, isAdmin, allFixes, decide, undecide,
     get user() { return user; }, get profile() { return profile; },
     label() { return user ? (profile && profile.prenom ? profile.prenom + ' ' + (profile.nom || '') : user.email) : 'Se connecter'; }
   };

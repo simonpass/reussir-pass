@@ -814,6 +814,10 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .tblwrap.fixing { border-color: var(--brand); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 25%, transparent); }
 .fixck { cursor: pointer; border: 2px solid var(--brand); background: var(--surface); width: 30px; height: 30px; border-radius: 6px; }
 .fixck.on { background: var(--brand); color: #fff; }
+/* tickets */
+.tk { margin-bottom: 12px; } .tk-stem { margin: 0; white-space: pre-wrap; }
+.tk-items { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 4px; font-size: 14.5px; } .tk-items b { color: var(--brand); margin-right: 4px; }
+.tk-props { display: grid; gap: 8px; } .tk-prop { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; }
 /* mes flashcards */
 .addcard { border-style: dashed; background: transparent; cursor: pointer; }
 .card-row { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
@@ -904,13 +908,24 @@ let timerId = null;
 let byId = {};
 function rebuild() { DATA = BASE.concat(IMPORTS); byId = Object.fromEntries(DATA.map(e => [e.id, e])); DATA.forEach(e => (e.questions || []).forEach((q, k) => { q._k = e.id + '#' + k; })); applyFixes(); }
 /* réponses attendues corrigées par l'élève : personnelles (cet appareil + son compte), jamais partagées */
+/* + corrections validées par l'administrateur (pour tous) : la correction perso passe avant */
+const fixGlobal = () => { try { return JSON.parse(localStorage.getItem('pass-fixg') || '{}'); } catch (e) { return {}; } };
 function applyFixes() {
-  const F = store.get('fix', {});
+  const F = store.get('fix', {}), G = fixGlobal();
   DATA.forEach(e => (e.questions || []).forEach(q => {
-    const f = F[q._k];
-    if (f && Array.isArray(f.a)) { if (!q.answer0) q.answer0 = (q.answer || []).slice(); q.answer = f.a.slice(); }
-    else if (q.answer0) { q.answer = q.answer0; delete q.answer0; }
+    const f = F[q._k], g = G[q._k], a = f && Array.isArray(f.a) ? f.a : g && g.statut === 'validée' && Array.isArray(g.answer) ? g.answer : null;
+    if (q.answer0) { q.answer = q.answer0; delete q.answer0; }
+    delete q.fixSrc;
+    if (a) { q.answer0 = (q.answer || []).slice(); q.answer = a.slice(); q.fixSrc = f && Array.isArray(f.a) ? 'perso' : 'global'; }
   }));
+}
+async function refreshDecisions() {
+  if (!window.Compte || !window.Compte.on) return;
+  const d = await window.Compte.loadDecisions(); if (!d) return;
+  const G = {}; d.forEach(x => { G[x.qkey] = { statut: x.statut, answer: x.answer }; });
+  const before = localStorage.getItem('pass-fixg'), now = JSON.stringify(G);
+  try { localStorage.setItem('pass-fixg', now); } catch (e) {}
+  if (before !== now) applyFixes();
 }
 rebuild();
 const ueOf = e => e.ue || 'UE4';
@@ -1256,13 +1271,15 @@ const drawer = document.createElement('div'); drawer.className = 'drawer'; drawe
 document.body.appendChild(drawer);
 function navOpen() {
   const due = fcDue(fcCards(null)).length;
+  if (window.Compte && window.Compte.user && window.TK_ADMIN === undefined) window.Compte.isAdmin().then(a => { window.TK_ADMIN = a; if (a && drawer.classList.contains('open')) navOpen(); });
   drawer.innerHTML = `<div class="drawer-scrim"></div><div class="drawer-panel" role="dialog" aria-label="Menu">
     <div class="drawer-head"><div class="splash-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h17a9 9 0 0 1 0 18H18v12"/><path d="M18 9v18"/><path d="M30 33l4 4 8-9"/></svg></div><div><b>Réussir PASS</b><small>Tutorat Lyon-Est</small></div></div>
     <nav>${NAV.map(([k, t, s, ic]) => `<button data-nav="${k}" class="${k === view ? 'on' : ''}" aria-current="${k === view ? 'page' : 'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic}</svg><span>${esc(t)}<small>${esc(s)}</small></span>${k === 'fc' && due ? `<i class="badge">${due}</i>` : ''}</button>`).join('')}</nav>
+    ${window.TK_ADMIN && window.Compte && window.Compte.user ? `<button class="drawer-acc" data-nav="tickets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"/><path d="M10 7v12" stroke-dasharray="2 2"/></svg><span>Tickets de correction<small>Valider les réponses corrigées par plusieurs élèves</small></span></button>` : ''}
     ${window.Compte && window.Compte.on ? `<button class="drawer-acc" data-nav="compte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>${esc(window.Compte.label())}<small>${window.Compte.user ? 'Progression synchronisée' : 'Créer un compte ou se connecter'}</small></span></button>` : ''}
     <div class="drawer-foot">reussir-pass.fr</div></div>`;
   drawer.querySelector('.drawer-scrim').onclick = navClose;
-  drawer.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { const v = b.dataset.nav; navClose(); if (v === 'compte') { if (window.Compte) window.Compte.open(); return; } if (v !== view) { view = v; store.set('view', view); } home(); });
+  drawer.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { const v = b.dataset.nav; navClose(); if (v === 'compte') { if (window.Compte) window.Compte.open(); return; } if (v === 'tickets') { ticketsOpen(); return; } if (v !== view) { view = v; store.set('view', view); } home(); });
   drawer.removeAttribute('aria-hidden'); $('#navBtn').setAttribute('aria-expanded', 'true');
   void drawer.offsetWidth; drawer.classList.add('open');
   setTimeout(() => { const on = drawer.querySelector('.on') || drawer.querySelector('[data-nav]'); on && on.focus({ preventScroll: true }); }, 50);
@@ -1363,7 +1380,7 @@ function demFiche(id) {
   app.innerHTML = `<div class="wrap fiche"><article class="hans"><h4>${esc(F.title)}</h4>${(F.sections || []).map(sc => `${sc.titre ? `<h5>${esc(sc.titre)}</h5>` : ''}${(sc.points || []).length ? `<ul>${sc.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}${sc.texte ? `<p>${esc(sc.texte)}</p>` : ''}`).join('')}</article></div>`;
   window.scrollTo(0, 0);
 }
-document.addEventListener('compte', () => demPoll(false));
+document.addEventListener('compte', () => { demPoll(false); refreshDecisions(); });
 
 /* ---------- Coupes d'histologie : reconnaître la coupe (window.HISTO, textes mot pour mot des cours) ---------- */
 const HISTO_CH = ['Épithéliums : introduction', 'Épithéliums de revêtement', 'Épithéliums glandulaires', 'Tissu nerveux', 'Tissu musculaire'];
@@ -2045,6 +2062,49 @@ function finish() {
   setTimeout(() => renderCorrection(done), 900);
 }
 
+/* ---------- Tickets (administrateur) : une même question corrigée par au moins 2 élèves ---------- */
+const TK_MIN = 2;
+async function ticketsOpen() {
+  $('#barTitle').textContent = 'Tickets de correction'; $('#homeBtn').hidden = false; $('#menuBtn').hidden = true; S = null;
+  app.innerHTML = '<div class="home wrap"><div class="loader">Chargement des tickets…</div></div>';
+  let rows = [], dec = [];
+  try { [rows, dec] = await Promise.all([window.Compte.allFixes(), window.Compte.loadDecisions()]); } catch (e) { app.innerHTML = `<div class="home wrap"><p class="plan-empty">Impossible de charger les tickets : ${esc(e.message || e)}</p></div>`; return; }
+  const D = {}; (dec || []).forEach(d => { D[d.qkey] = d; });
+  const byQ = {}; rows.forEach(r => (byQ[r.qkey] = byQ[r.qkey] || []).push(r));
+  const open = Object.entries(byQ).filter(([k, l]) => new Set(l.map(r => r.user_id)).size >= TK_MIN && !D[k]).sort((a, b) => b[1].length - a[1].length);
+  const single = Object.entries(byQ).filter(([k, l]) => new Set(l.map(r => r.user_id)).size < TK_MIN && !D[k]).length;
+  const qInfo = k => { const i = k.lastIndexOf('#'), e = byId[k.slice(0, i)], q = findQ(k.slice(0, i), +k.slice(i + 1)); return { e, q }; };
+  const L = a => (a && a.length ? a.join(' ') : 'aucune');
+  const card = (k, l) => {
+    const { e, q } = qInfo(k); if (!q) return '';
+    const groups = {}; l.forEach(r => { const s = L((r.answer || []).slice().sort()); (groups[s] = groups[s] || []).push(r); });
+    const orig = (l[0].original && l[0].original.length ? l[0].original : (q.answer0 && q.fixSrc ? q.answer0 : q.answer)) || [];
+    return `<article class="hans tk" data-k="${esc(k)}"><h4>${esc(e ? (e.ue ? e.ue + ' · ' : '') + e.title : k)} · Q${esc(q.num || '')}</h4>
+      <p class="tk-stem">${esc(q.stem || '')}</p>
+      <ul class="tk-items">${(q.items || []).map(it => `<li><b>${esc(it.letter)}</b> ${esc(it.text)}</li>`).join('')}</ul>
+      <p class="note-src">Réponse d’origine (tuteurs) : <b>${esc(L(orig))}</b></p>
+      <h5>Corrections proposées</h5>
+      <div class="tk-props">${Object.entries(groups).sort((a, b) => b[1].length - a[1].length).map(([s, g]) => `<div class="tk-prop"><span><b>${esc(s)}</b> · ${g.length} élève${g.length > 1 ? 's' : ''}</span><button class="btn blue" data-tkok="${esc(s)}">Valider pour tous</button></div>`).join('')}</div>
+      <div class="hgrade"><button class="btn" data-tkno>Rejeter (garder la réponse d’origine)</button></div></article>`;
+  };
+  const done = Object.values(D).filter(d => d.statut === 'validée');
+  app.innerHTML = `<div class="home wrap">
+    <div class="hero"><span class="eyebrow">Administration</span><h2>Tickets de <em>correction</em></h2>
+      <p>Un ticket s’ouvre quand au moins ${TK_MIN} élèves ont corrigé la même question. « Valider pour tous » applique la réponse choisie à tous les comptes ; chacun peut toujours garder sa propre correction.</p></div>
+    <section class="group"><h3>${open.length} ticket${open.length > 1 ? 's' : ''} ouvert${open.length > 1 ? 's' : ''}</h3>
+      ${open.length ? open.map(([k, l]) => card(k, l)).join('') : '<p class="plan-empty">Aucun ticket pour l’instant.</p>'}
+      ${single ? `<p class="note-src">${single} question${single > 1 ? 's' : ''} corrigée${single > 1 ? 's' : ''} par un seul élève (pas encore de ticket).</p>` : ''}</section>
+    ${done.length ? `<section class="group"><h3>Corrections validées</h3><div class="dem-list">${done.map(d => { const { e, q } = qInfo(d.qkey); return `<div class="card-row"><div class="cr-txt"><b>${esc(e ? e.title : d.qkey)}${q ? ' · Q' + esc(q.num || '') : ''}</b><span>${esc(L(d.original))} → ${esc(L(d.answer))}</span></div><div class="cr-act"><button class="btn" data-tkundo="${esc(d.qkey)}">Annuler</button></div></div>`; }).join('')}</div></section>` : ''}
+  </div>`;
+  const after = async msg => { await refreshDecisions(); toast(msg); ticketsOpen(); };
+  app.querySelectorAll('.tk').forEach(c => {
+    const k = c.dataset.k, l = byQ[k], { q } = qInfo(k), orig = (l[0].original && l[0].original.length ? l[0].original : q.answer) || [];
+    c.querySelectorAll('[data-tkok]').forEach(b => b.onclick = async () => { const a = b.dataset.tkok === 'aucune' ? [] : b.dataset.tkok.split(' '); if (!confirm(`Appliquer la réponse « ${b.dataset.tkok} » à tous les comptes ?`)) return; try { await window.Compte.decide(k, 'validée', a, orig); after('Correction validée pour tous.'); } catch (e) { toast('Échec : ' + (e.message || e)); } });
+    c.querySelector('[data-tkno]').onclick = async () => { try { await window.Compte.decide(k, 'rejetée', null, orig); after('Ticket rejeté.'); } catch (e) { toast('Échec : ' + (e.message || e)); } };
+  });
+  app.querySelectorAll('[data-tkundo]').forEach(b => b.onclick = async () => { if (!confirm('Annuler cette correction pour tous les comptes ?')) return; try { await window.Compte.undecide(b.dataset.tkundo); after('Correction annulée.'); } catch (e) { toast('Échec : ' + (e.message || e)); } });
+  window.scrollTo(0, 0);
+}
 /* ---------- correction de la réponse attendue par l'élève ---------- */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-fix]'); if (!b || !b.dataset.fix) return;
@@ -2057,10 +2117,17 @@ document.addEventListener('click', e => {
     const draw = () => { td.innerHTML = `<button class="ck fixck ${set.has(L) ? 'on' : ''}" aria-pressed="${set.has(L)}" aria-label="Item ${esc(L)} juste">${set.has(L) ? CHECK : ''}</button>`; td.firstChild.onclick = () => { set.has(L) ? set.delete(L) : set.add(L); draw(); }; };
     draw();
   });
-  row.innerHTML = `<span class="fixnote">Cochez les items justes, puis enregistrez. Cette correction n’est visible que par vous.</span><button class="btn blue" data-fixsave>Enregistrer</button>${q.answer0 ? '<button class="btn" data-fixreset>Rétablir l’original</button>' : ''}<button class="btn" data-fixcancel>Annuler</button>`;
+  row.innerHTML = `<span class="fixnote">Cochez les items justes, puis enregistrez. Cette correction n’est visible que par vous.</span><button class="btn blue" data-fixsave>Enregistrer</button>${q.fixSrc === 'perso' ? '<button class="btn" data-fixreset>Rétablir</button>' : ''}<button class="btn" data-fixcancel>Annuler</button>`;
   const done = F => { store.set('fix', F); applyFixes(); const y = window.scrollY; if (S && S.qs && document.querySelector('.scorehead')) renderCorrection(S); else if (S) renderExam(); window.scrollTo(0, y); };
-  row.querySelector('[data-fixsave]').onclick = () => { const F = store.get('fix', {}), orig = (q.answer0 || q.answer || []).slice().sort().join(''), a = [...set].sort(); if (a.join('') === orig) delete F[qk]; else F[qk] = { a, t: Date.now() }; done(F); toast('Correction enregistrée pour vous.'); };
-  const rs = row.querySelector('[data-fixreset]'); if (rs) rs.onclick = () => { const F = store.get('fix', {}); delete F[qk]; done(F); toast('Réponse d’origine rétablie.'); };
+  row.querySelector('[data-fixsave]').onclick = () => {
+    const F = store.get('fix', {}), base = q.fixSrc === 'perso' ? (q.answer0 || []) : (q.answer || []), src = (q.fixSrc ? q.answer0 : q.answer) || [], a = [...set].sort();
+    const cur = (q.fixSrc === 'global' ? q.answer : base).slice().sort().join('');
+    if (a.join('') === cur) delete F[qk]; else F[qk] = { a, t: Date.now() };
+    done(F);
+    if (window.Compte && window.Compte.user) { if (F[qk]) window.Compte.pushFix(qk, a, src.slice().sort()); else window.Compte.delFix(qk); }
+    toast(F[qk] ? 'Correction enregistrée pour vous.' : 'Aucune différence : rien à enregistrer.');
+  };
+  const rs = row.querySelector('[data-fixreset]'); if (rs) rs.onclick = () => { const F = store.get('fix', {}); delete F[qk]; done(F); if (window.Compte && window.Compte.user) window.Compte.delFix(qk); toast('Correction retirée.'); };
   row.querySelector('[data-fixcancel]').onclick = () => done(store.get('fix', {}));
 });
 /* ---------- correction ---------- */
@@ -2075,7 +2142,7 @@ function correctionHtml(q, sel, res) {
         return `<tr><td class="L">${esc(it.letter)}</td><td><span class="ck ${exp ? 'on' : ''}">${exp ? CHECK : ''}</span></td><td><span class="ck ${got ? 'on' : ''}">${got ? CHECK : ''}</span></td>
           <td class="${dis ? 'dis-yes' : 'dis-no'}">${dis ? 'Oui (+1)' : 'Non'}</td><td class="txt">${esc(it.text)}</td></tr>`;
       }).join('')}</tbody></table></div>
-      <div class="fixrow">${q.answer0 ? `<span class="fixnote">Réponse attendue corrigée par vous (original : ${esc(q.answer0.join(' ') || 'aucune')})</span>` : ''}<button class="fixbtn" data-fix="${esc(q._k || '')}">✎ ${q.answer0 ? 'Modifier ma correction' : 'Corriger la réponse attendue'}</button></div>` : ''}
+      <div class="fixrow">${q.answer0 ? `<span class="fixnote">${q.fixSrc === 'global' ? 'Réponse attendue corrigée après vérification' : 'Réponse attendue corrigée par vous'} (original : ${esc(q.answer0.join(' ') || 'aucune')})</span>` : ''}<button class="fixbtn" data-fix="${esc(q._k || '')}">✎ ${q.fixSrc === 'perso' ? 'Modifier ma correction' : 'Corriger la réponse attendue'}</button></div>` : ''}
     <div class="detail"><h4>Correction</h4>
       ${has ? `<div class="dl">${q.items.map(it => {
         const c = (q.corrections || {})[it.letter] || {};
