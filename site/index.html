@@ -316,6 +316,8 @@ td.dis-no { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
 .chap .cn { font-weight: 600; line-height: 1.25; }
 .chap .cc { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .chap i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--ok); }
+/* Sessions : chapitre coché */
+.chap.on { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
 @media (hover: hover) { .chap:hover { border-color: var(--brand); } }
 
 /* ===== Thème 2 : plus doux, une couleur par UE ===== */
@@ -969,6 +971,7 @@ function home() {
   if (view === 'histo') return histoHome();
   if (view === 'cal') return planHome();
   if (view === 'dem') return demHome();
+  if (view === 'ses') return sesHome();
   $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
   $('#barTitle').textContent = `Annales ${ue}`;
   document.documentElement.dataset.ue = ue;
@@ -1167,6 +1170,152 @@ function m3dOpen(i, st) {
   window.Model3D.open(host, i, { esc, stage: st || 0 });
   window.scrollTo(0, 0);
 }
+/* ---------- Sessions : « Flash » (QCM tirés au hasard dans plusieurs chapitres) et « Ancrage » (mémorisation : chaque question réussie 3 fois) ---------- */
+let SES = { tab: store.get('sesTab', 'flash') };
+let AN = null;                                   // session d'ancrage affichée (copie de store 'ancrage')
+const AN_GOAL = 3;                               // réussites parfaites nécessaires pour « ancrer » une question
+const chapId = (m, c) => m + '\u0001' + c;
+const sesSelGet = () => (store.get('sesSel', {})[ue] || []);
+const sesSelSet = l => { const all = store.get('sesSel', {}); all[ue] = l; store.set('sesSel', all); };
+const normTx = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+/* Question de cours ou exercice ? Heuristique sur l'énoncé (contexte + stem) et les items :
+   exercice si (1) l'énoncé contient un verbe/terme de calcul (« calculer », « valeur de », « application numérique »,
+   « arrondi », « formule », « équation », « on donne », « combien »…), ou (2) au moins 2 items sont des valeurs chiffrées
+   avec unité (mg, mL, mmol, Hz, Pa, Gy…, pas les % : fréquents dans les questions de cours) ou des expressions numériques (×10, 10^, =, fractions), ou
+   (3) au moins 3 items sont courts et faits pour moitié de chiffres (réponses « 12,5 », « 0,25 »…). */
+const UNIT_RE = /\d+(?:[.,]\d+)?\s*(?:[µm]?g|kg|[µmd]?l|[µmn]?mol|mmol|[cmnµ]m|m[²³]|ms|min|[kM]?hz|[k]?j|[kM]?w|m?v|[k]?pa|mmhg|cmh2o|atm|°c|gy|sv|bq|[kM]?ev|db|ui|osm|mosm|ua|cal|kcal)(?![a-zà-ÿ0-9])/gi;
+function isCalc(q) {
+  const st = (q.context || '') + ' ' + (q.stem || '');
+  if (/\b(calcul\w*|valeur (de|du|numerique)|application numerique|arrondi\w*|formule|equation|on donne|combien|en deduire la valeur|vaut|egale? a)\b/.test(normTx(st))) return true;
+  const its = (q.items || []).map(it => String(it.text || ''));
+  const numItem = t => (t.match(UNIT_RE) || []).length > 0 || /\d\s*[×x*]\s*10|10\s*\^|\d\s*[=\/]\s*\d|\de[-+]?\d/i.test(t);
+  if (its.filter(numItem).length >= 2) return true;
+  if (its.filter(t => t.length < 30 && /\d/.test(t) && (t.match(/\d/g) || []).length >= t.replace(/\s/g, '').length * 0.5).length >= 3) return true;
+  return false;
+}
+/* Score de récurrence (par UE, calculé une fois) : sur toutes les épreuves et banques de l'UE (+ imports), on normalise le texte
+   (minuscules, sans accents ni ponctuation) de chaque énoncé (≥ 20 caractères) et de chaque item (≥ 15 caractères), puis on compte
+   dans combien d'épreuves DIFFÉRENTES chaque texte apparaît. Score d'une question = 2 × (épreuves où son énoncé revient − 1)
+   + moyenne sur ses items de (épreuves où l'item revient − 1). Une question dont les items reviennent souvent d'une année à l'autre
+   passe donc en premier. Les doublons exacts (même énoncé + mêmes items) ne sont proposés qu'une fois. */
+const RECUR = {};
+function recurIndex(u) {
+  if (RECUR[u]) return RECUR[u];
+  const cnt = {}, add = (s, eid) => { (cnt[s] = cnt[s] || new Set()).add(eid); };
+  const exams = BASE.concat(IMPORTS).filter(e => ueOf(e) === u || (e.imported && e.ue === u));
+  const sig = q => ({ st: normTx((q.context || '') + ' ' + (q.stem || '')), it: (q.items || []).map(x => normTx(x.text)) });
+  exams.forEach(e => (e.questions || []).forEach(q => { const g = sig(q); if (g.st.length >= 20) add('s:' + g.st, e.id); g.it.forEach(t => { if (t.length >= 15) add('i:' + t, e.id); }); }));
+  const n = s => (cnt[s] ? cnt[s].size : 1) - 1;
+  const score = q => { const g = sig(q); const its = g.it.filter(t => t.length >= 15); return 2 * (g.st.length >= 20 ? n('s:' + g.st) : 0) + (its.length ? its.reduce((a, t) => a + n('i:' + t), 0) / its.length : 0); };
+  return (RECUR[u] = { score, full: q => { const g = sig(q); return g.st + '|' + g.it.join('|'); } });
+}
+function sesChapters() { return bdqData() || []; }
+function sesRefs() {
+  const sel = new Set(sesSelGet()), out = [], seen = new Set();
+  sesChapters().forEach(M => M.chapitres.forEach(C => { if (sel.has(chapId(M.nom, C.nom))) C.keys.forEach(r => { const id = r[0] + '#' + r[1]; if (!seen.has(id)) { seen.add(id); out.push(r); } }); }));
+  return out.filter(([e, k]) => { const q = findQ(e, k); return q && scorable(q); });
+}
+const sesCours = refs => refs.filter(([e, k]) => !isCalc(findQ(e, k)));
+function sesHome() {
+  $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
+  $('#barTitle').textContent = 'Sessions'; document.documentElement.dataset.ue = ue;
+  AN = null;
+  const flash = SES.tab === 'flash', mats = sesChapters(), sel = new Set(sesSelGet());
+  const refs = sesRefs(), avail = flash ? refs.length : sesCours(refs).length;
+  const N = store.get(flash ? 'sesNF' : 'sesNA', flash ? 20 : 10);
+  const saved = store.get('ancrage', null), ok = saved && saved.items.filter(x => x.n >= AN_GOAL).length;
+  const seg = (name, cur, opts) => `<div class="seg sm" role="group">${opts.map(([v, l]) => `<button data-${name}="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const ueHas = u => !!(window.BDQ || {})[u];
+  app.innerHTML = `<div class="home wrap">
+    <nav class="uepick" aria-label="Choisir l’UE">${UES.filter(ueHas).map(u => `<button class="${u === ue ? 'on' : ''}" data-sue="${esc(u)}" aria-pressed="${u === ue}"><i class="dot"></i><b>${esc(u)}</b></button>`).join('')}</nav>
+    <div class="hero"><span class="eyebrow">Sessions</span><h2>${flash ? 'Session <em>flash</em>' : 'Session <em>ancrage</em>'}</h2>
+      <p>${flash ? 'Cochez un ou plusieurs chapitres : les questions des annales sont tirées au hasard dans ces chapitres, avec leur correction et la note habituelles.' : `Questions de cours (sans exercices de calcul), en commençant par celles qui reviennent le plus dans les annales. Chaque question doit être réussie ${AN_GOAL} fois pour être ancrée : la liste tourne en boucle jusqu’à ce que tout soit ancré.`}</p></div>
+    <div class="seg" role="tablist"><button data-stab="flash" class="${flash ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${flash ? '' : 'on'}">Session ancrage</button></div>
+    ${!flash && saved && ok < saved.items.length ? `<section class="group"><h3>Session en cours</h3><div class="impask"><div><b>${esc(saved.title)}</b><span>${ok}/${saved.items.length} questions ancrées</span></div><button class="btn orange" id="anResume">Reprendre</button><button class="btn" id="anDrop">Abandonner</button></div></section>` : ''}
+    ${!mats.length ? '<p class="note-src">Le classement par chapitre de cette UE n’est pas encore disponible.</p>' : `
+    <section class="group"><h3>Réglages</h3><div class="bdqopts">
+      <div><span class="note-src">Nombre de questions</span>${seg('sn', N, flash ? [[10, '10'], [20, '20'], [40, '40'], [60, '60']] : [[5, '5'], [10, '10'], [15, '15'], [20, '20']])}</div>
+      ${flash ? `<div><span class="note-src">Mode</span>${seg('smode', mode, [['exam', 'Examen'], ['train', 'Entraînement']])}</div>` : ''}
+    </div></section>
+    ${mats.map((M, mi) => { const all = M.chapitres.every(C => sel.has(chapId(M.nom, C.nom))); return `<section class="group matiere"><h3>${esc(M.nom)}</h3>
+      <div class="matcard"><div class="mh"><div><b>${M.chapitres.filter(C => sel.has(chapId(M.nom, C.nom))).length}</b> / ${M.chapitres.length} chapitres cochés</div><button class="btn sm ${all ? '' : 'blue'}" data-sall="${mi}">${all ? 'Tout décocher' : 'Tout cocher'}</button></div>
+      <div class="chaps">${M.chapitres.map((C, ci) => { const on = sel.has(chapId(M.nom, C.nom)); return `<button class="chap${on ? ' on' : ''}" data-sch="${mi}|${ci}" aria-pressed="${on}"><span class="cn">${on ? '✓ ' : ''}${esc(C.nom)}</span><span class="cc">${C.st.n}</span></button>`; }).join('')}</div></div></section>`; }).join('')}
+    <section class="group"><div class="impask"><div><b>${avail} question${avail > 1 ? 's' : ''} disponible${avail > 1 ? 's' : ''}</b><span>${sel.size ? (flash ? 'dans les chapitres cochés' : 'questions de cours dans les chapitres cochés') : 'Cochez au moins un chapitre'}</span></div><button class="btn orange" id="sesGo" ${avail ? '' : 'disabled'}>Lancer la session</button></div></section>`}
+  </div>`;
+  const re = () => { const y = window.scrollY; sesHome(); window.scrollTo(0, y); };
+  app.querySelectorAll('[data-sue]').forEach(b => b.onclick = () => { ue = b.dataset.sue; store.set('ue', ue); sesHome(); });
+  app.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { SES.tab = b.dataset.stab; store.set('sesTab', SES.tab); re(); });
+  app.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { store.set(flash ? 'sesNF' : 'sesNA', +b.dataset.sn); re(); });
+  app.querySelectorAll('[data-smode]').forEach(b => b.onclick = () => { mode = b.dataset.smode; store.set('mode', mode); re(); });
+  app.querySelectorAll('[data-sch]').forEach(b => b.onclick = () => { const [mi, ci] = b.dataset.sch.split('|'), M = mats[+mi], id = chapId(M.nom, M.chapitres[+ci].nom); sel.has(id) ? sel.delete(id) : sel.add(id); sesSelSet([...sel]); re(); });
+  app.querySelectorAll('[data-sall]').forEach(b => b.onclick = () => { const M = mats[+b.dataset.sall], ids = M.chapitres.map(C => chapId(M.nom, C.nom)), all = ids.every(i => sel.has(i)); ids.forEach(i => all ? sel.delete(i) : sel.add(i)); sesSelSet([...sel]); re(); });
+  const rs = $('#anResume'); if (rs) rs.onclick = () => { AN = saved; anRender(); };
+  const dr = $('#anDrop'); if (dr) dr.onclick = () => confirmBox('Abandonner la session ?', 'La progression de cette session d’ancrage sera effacée.', 'Abandonner', () => { store.set('ancrage', null); re(); });
+  const go = $('#sesGo'); if (go) go.onclick = () => {
+    const chaps = []; mats.forEach(M => M.chapitres.forEach(C => { if (sel.has(chapId(M.nom, C.nom))) chaps.push(C.nom); }));
+    const label = chaps.length <= 2 ? chaps.join(' + ') : chaps.length + ' chapitres';
+    if (flash) { const list = shuffle(refs.slice()).slice(0, N); startList(`Session flash · ${label} · ${ue}`, list); return; }
+    const R = recurIndex(ue), seenF = new Set();
+    const ranked = shuffle(sesCours(refs).slice()).map(r => { const q = findQ(r[0], r[1]); return { r, s: R.score(q), f: R.full(q) }; }).sort((a, b) => b.s - a.s)
+      .filter(x => seenF.has(x.f) ? false : (seenF.add(x.f), true)).slice(0, N);
+    AN = { ue, title: `Ancrage · ${label} · ${ue}`, items: ranked.map(x => ({ e: x.r[0], k: x.r[1], n: 0 })), cur: 0, last: -1, t0: Date.now() };
+    anSave(); anRender();
+  };
+  window.scrollTo(0, 0);
+}
+function anSave() { if (AN) store.set('ancrage', { ue: AN.ue, title: AN.title, items: AN.items, cur: AN.cur, last: AN.last, t0: AN.t0 }); }
+/* question suivante : on parcourt la liste en boucle à partir de la position courante, en sautant les questions déjà ancrées ;
+   on évite la question qu'on vient de faire s'il en reste une autre */
+function anNext() {
+  const L = AN.items.length;
+  for (let s = 1; s <= L; s++) { const i = (AN.cur + s) % L; if (AN.items[i].n < AN_GOAL && (i !== AN.cur || L === 1)) return i; }
+  return AN.items[AN.cur].n < AN_GOAL ? AN.cur : -1;
+}
+function anRender() {
+  if (!AN) return sesHome();
+  if (AN.ue !== ue && UES.includes(AN.ue)) { ue = AN.ue; store.set('ue', ue); }
+  $('#menuBtn').hidden = true; $('#homeBtn').hidden = false; $('#subbar').hidden = true;
+  $('#barTitle').textContent = AN.title; document.documentElement.dataset.ue = ue;
+  const L = AN.items.length, ok = AN.items.filter(x => x.n >= AN_GOAL).length;
+  const head = `<div class="panel"><div class="who">Session ancrage</div><div class="prog"><span>${ok}/${L} questions ancrées</span><div class="bar"><i style="width:${L ? ok / L * 100 : 0}%"></i></div></div></div>`;
+  if (ok >= L && !AN.res) {
+    app.innerHTML = `<div class="home wrap">${head}<div class="hero"><span class="eyebrow">Terminé</span><h2>Tout est <em>ancré</em></h2><p>Les ${L} questions ont été réussies ${AN_GOAL} fois chacune.</p></div><div><button class="btn orange" id="anEnd">Retour aux sessions</button></div></div>`;
+    store.set('ancrage', null);
+    $('#anEnd').onclick = () => { AN = null; sesHome(); };
+    window.scrollTo(0, 0); return;
+  }
+  if (!AN.res && AN.items[AN.cur].n >= AN_GOAL || !findQ(AN.items[AN.cur].e, AN.items[AN.cur].k)) { const nx = anNext(); if (nx < 0) { AN.items.forEach(x => { if (!findQ(x.e, x.k)) x.n = AN_GOAL; }); return anRender(); } AN.cur = nx; }
+  const it = AN.items[AN.cur], q = findQ(it.e, it.k), multi = q.type !== 'QRU';
+  const sel = AN.sel || [], res = AN.res || null;
+  app.innerHTML = `<div class="wrap" style="display:grid;gap:14px;padding-top:14px;padding-bottom:40px">${head}
+    <article class="q ${res ? 'r-' + cls(res) : ''}" id="anq">
+      <div class="qh"><span class="num">Question ${AN.cur + 1}/${L} · ${'●'.repeat(Math.min(it.n, AN_GOAL))}${'○'.repeat(AN_GOAL - Math.min(it.n, AN_GOAL))} ${Math.min(it.n, AN_GOAL)}/${AN_GOAL}</span><span class="ty">${multi ? 'Question à réponses multiples' : 'Question à réponse unique'}</span></div>
+      <div class="qb">
+        <div class="note-src">${esc(byId[it.e].title)} · ${q.section ? esc(q.section) + ' · ' : ''}Q${q.num ?? it.k + 1}</div>
+        ${q.context ? `<div class="ctx">${esc(q.context)}</div>` : ''}
+        <div class="stem">${esc(q.stem)}</div>
+        ${figHtml(q.figures)}
+        <div class="items ${res ? 'locked' : ''}" role="${multi ? 'group' : 'radiogroup'}">${q.items.map(x => { const on = sel.includes(x.letter); return `<label class="item ${on ? 'on' : ''}" data-l="${esc(x.letter)}">
+          <input type="${multi ? 'checkbox' : 'radio'}" name="anq" ${on ? 'checked' : ''} ${res ? 'disabled' : ''} aria-label="Item ${esc(x.letter)}">
+          <span class="box ${multi ? '' : 'round'}">${multi ? CHECK : '<i></i>'}</span><span class="L">${esc(x.letter)} -</span><span class="tx">${esc(x.text)}</span></label>`; }).join('')}</div>
+        <div class="qf"><span></span>${res ? '<button class="btn orange" id="anNext">Question suivante</button>' : `<button class="btn orange" id="anSave" ${sel.length ? '' : 'disabled'}>Corriger</button>`}</div>
+        ${res ? correctionHtml(q, sel, res) : ''}
+      </div></article></div>`;
+  if (!res) app.querySelectorAll('#anq .item').forEach(row => row.addEventListener('click', ev => {
+    ev.preventDefault(); const l = row.dataset.l; let cur = (AN.sel || []).slice();
+    cur = multi ? (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]) : (cur.includes(l) ? [] : [l]);
+    AN.sel = cur.sort(); const y = window.scrollY; anRender(); window.scrollTo(0, y);
+  }));
+  const sv = $('#anSave'); if (sv) sv.onclick = () => {
+    const r = grade(q, AN.sel); AN.res = r || { pts: 0, dis: 0 };
+    recordResult(it.e, it.k, r);
+    if (r && r.pts >= 1) it.n = Math.min(AN_GOAL, it.n + 1);   // une erreur ne fait pas progresser mais n'efface rien
+    AN.last = AN.cur; anSave(); const y = window.scrollY; anRender(); window.scrollTo(0, y);
+  };
+  const nb = $('#anNext'); if (nb) nb.onclick = () => { AN.sel = []; AN.res = null; const nx = anNext(); if (nx >= 0) AN.cur = nx; anSave(); anRender(); };
+  app.querySelectorAll('#anq .figs img').forEach(img => img.onclick = () => zoom(img.src));
+  if (!res) window.scrollTo(0, 0);
+}
 /* ---------- Menu ☰ : tiroir de navigation entre les rubriques (remplace les onglets) ---------- */
 const NAV = [
   ['annales', 'Annales', 'Épreuves corrigées par UE', '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>'],
@@ -1174,13 +1323,14 @@ const NAV = [
   ['bank', 'Banque de QCM', 'Banques du tutorat', '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h8"/>'],
   ['m3d', 'Modèles 3D', 'Embryologie, 4 semaines', '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/>'],
   ['histo', 'Coupes', 'Reconnaître la coupe', '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="2"/><circle cx="15" cy="14" r="2.5"/><circle cx="14.5" cy="7.5" r="1"/>'],
+  ['ses', 'Sessions', 'Session flash, session ancrage', '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'],
   ['fc', 'Flashcards', 'Répétition espacée', '<rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/>'],
   ['dem', 'Mes demandes', 'Flashcards, QCM, fiches sur mesure', '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>'],
   ['cal', 'Planning', 'Calendrier de révision', '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/>']
 ];
 
 /* ---------- Planning : calendrier de révision (enregistré sur l'appareil, clé ue4:plan) ---------- */
-const PLAN_KINDS = { annales: ['Annales', '#2a6f98'], bdq: ['BDQCM', '#7a5cc7'], bank: ['Banque de QCM', '#1f8a8a'], fc: ['Flashcards', '#e98b2c'], m3d: ['Modèles 3D', '#c04f8a'], histo: ['Coupes', '#4f8a3a'], autre: ['Autre', '#6b7785'] };
+const PLAN_KINDS = { annales: ['Annales', '#2a6f98'], bdq: ['BDQCM', '#7a5cc7'], bank: ['Banque de QCM', '#1f8a8a'], fc: ['Flashcards', '#e98b2c'], m3d: ['Modèles 3D', '#c04f8a'], histo: ['Coupes', '#4f8a3a'], sesF: ['Session flash', '#b8860b'], sesA: ['Session ancrage', '#3a7a6a'], autre: ['Autre', '#6b7785'] };
 const pad2 = n => String(n).padStart(2, '0');
 const isoD = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -1252,7 +1402,7 @@ function planHome() {
     const serie = p.rep && P.filter(x => x.rep === p.rep && x.d >= p.d).length > 1 && confirm('Supprimer aussi les séances suivantes de cette série ?');
     store.set('plan', P.filter(x => serie ? !(x.rep === p.rep && x.d >= p.d) : x.id !== p.id)); rerender();
   });
-  app.querySelectorAll('[data-pgo]').forEach(b => b.onclick = () => { const p = planAll().find(x => x.id === b.dataset.pgo); if (!p) return; if (p.ue && UES.includes(p.ue)) { ue = p.ue; store.set('ue', ue); } view = p.kind; store.set('view', view); home(); });
+  app.querySelectorAll('[data-pgo]').forEach(b => b.onclick = () => { const p = planAll().find(x => x.id === b.dataset.pgo); if (!p) return; if (p.ue && UES.includes(p.ue)) { ue = p.ue; store.set('ue', ue); } if (p.kind === 'sesF' || p.kind === 'sesA') { SES.tab = p.kind === 'sesF' ? 'flash' : 'ancrage'; store.set('sesTab', SES.tab); view = 'ses'; } else view = p.kind; store.set('view', view); home(); });
   const add = $('#planAdd'); if (add) add.onclick = () => { PL.form = true; rerender(); setTimeout(() => $('#planForm').scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); };
   const f = $('#planForm');
   if (f) {
@@ -2129,7 +2279,7 @@ document.addEventListener('click', e => {
     draw();
   });
   row.innerHTML = `<span class="fixnote">Cochez les items justes et modifiez si besoin les explications dans l’encadré « Correction », puis enregistrez. Visible seulement par vous.</span><button class="btn blue" data-fixsave>Enregistrer</button>${q.fixSrc === 'perso' ? '<button class="btn" data-fixreset>Rétablir</button>' : ''}<button class="btn" data-fixcancel>Annuler</button>`;
-  const done = F => { store.set('fix', F); applyFixes(); const y = window.scrollY; if (S && S.qs && document.querySelector('.scorehead')) renderCorrection(S); else if (S) renderExam(); window.scrollTo(0, y); };
+  const done = F => { store.set('fix', F); applyFixes(); const y = window.scrollY; if (S && S.qs && document.querySelector('.scorehead')) renderCorrection(S); else if (S) renderExam(); else if (AN && view === 'ses') anRender(); window.scrollTo(0, y); };
   row.querySelector('[data-fixsave]').onclick = () => {
     const F = store.get('fix', {}), base = q.fixSrc === 'perso' ? (q.answer0 || []) : (q.answer || []), src = (q.fixSrc ? q.answer0 : q.answer) || [], a = [...set].sort();
     const cur = (q.fixSrc === 'global' ? q.answer : base).slice().sort().join('');
