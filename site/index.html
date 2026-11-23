@@ -1245,6 +1245,7 @@ function sesHome() {
   AN = null;
   if (SES.tab === 'noires' && !anStrict()) SES.tab = 'ancrage';
   if (SES.tab === 'noires') return noiresHome();
+  if (SES.tab === 'tuto') return tutoHome();
   const flash = SES.tab === 'flash', mats = sesChapters(), sel = new Set(sesSelGet());
   const refs = sesRefs(), avail = flash ? refs.length : sesCours(refs).length;
   const N = store.get(flash ? 'sesNF' : 'sesNA', flash ? 20 : 10);
@@ -1289,8 +1290,51 @@ function sesHome() {
   };
   window.scrollTo(0, 0);
 }
-const sesTabs = () => `<div class="seg" role="tablist"><button data-stab="flash" class="${SES.tab === 'flash' ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${SES.tab === 'ancrage' ? 'on' : ''}">Session ancrage</button>${anStrict() ? `<button data-stab="noires" class="${SES.tab === 'noires' ? 'on' : ''}">Mes bêtes noires</button>` : ''}</div>`;
+const sesTabs = () => `<div class="seg" role="tablist"><button data-stab="flash" class="${SES.tab === 'flash' ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${SES.tab === 'ancrage' ? 'on' : ''}">Session ancrage</button><button data-stab="tuto" class="${SES.tab === 'tuto' ? 'on' : ''}">Ancrage tutorat</button>${anStrict() ? `<button data-stab="noires" class="${SES.tab === 'noires' ? 'on' : ''}">Mes bêtes noires</button>` : ''}</div>`;
 function bindSesTabs(re) { app.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { SES.tab = b.dataset.stab; store.set('sesTab', SES.tab); re(); }); }
+/* onglet « Ancrage tutorat » : session d'ancrage (mêmes règles) uniquement sur les banques de QCM du tutorat, chapitres cochés à part */
+function tutoHome() {
+  const docs = BASE.filter(e => e.bank && ueOf(e) === ue).sort((a, b) => a.title.localeCompare(b.title, 'fr', { numeric: true }));
+  const selAll = store.get('tutoSel', {}), sel = new Set(selAll[ue] || []), N = store.get('sesNT', 10);
+  const saved = store.get('ancrage', null), busy = saved && saved.items.some(x => x.n < AN_GOAL);
+  const refs = docs.filter(e => sel.has(e.id)).flatMap(e => e.questions.map((q, k) => [e.id, k]).filter(([e, k]) => { const q = findQ(e, k); return q && scorable(q); }));
+  const seg = (name, cur, opts) => `<div class="seg sm" role="group">${opts.map(([v, l]) => `<button data-${name}="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const hasBank = u => BASE.some(e => e.bank && ueOf(e) === u);
+  app.innerHTML = `<div class="home wrap">
+    <nav class="uepick" aria-label="Choisir l’UE">${UES.filter(hasBank).map(u => `<button class="${u === ue ? 'on' : ''}" data-sue="${esc(u)}" aria-pressed="${u === ue}"><i class="dot"></i><b>${esc(u)}</b></button>`).join('')}</nav>
+    <div class="hero"><span class="eyebrow">Sessions</span><h2>Ancrage <em>tutorat</em></h2>
+      <p>Session ancrage uniquement sur les banques de QCM du tutorat. Chaque question doit être réussie ${AN_GOAL} fois pour être ancrée.${anStrict() ? ` Règles renforcées : une erreur remet la question à 0/${AN_GOAL}, une question ratée ne revient qu’après au moins ${AN_GOAL} autres, et l’ordre des propositions change à chaque passage.` : ''}</p></div>
+    ${sesTabs()}
+    ${busy ? `<section class="group"><h3>Session en cours</h3><div class="impask"><div><b>${esc(saved.title)}</b><span>${saved.items.filter(x => x.n >= AN_GOAL).length}/${saved.items.length} questions ancrées</span></div><button class="btn orange" id="anResume">Reprendre</button></div></section>` : ''}
+    ${!docs.length ? '<p class="note-src">Pas encore de banque de QCM du tutorat pour cette UE.</p>' : `
+    <section class="group"><h3>Réglages</h3><div class="bdqopts">
+      <div><span class="note-src">Nombre de questions</span>${seg('tn', N, [[5, '5'], [10, '10'], [15, '15'], [20, '20']])}</div>
+      <div><span class="note-src">Règles</span>${seg('srule', anStrict() ? 1 : 0, [[1, 'Renforcées (essai)'], [0, 'Classiques']])}</div>
+    </div></section>
+    <section class="group matiere"><h3>Banques du tutorat · ${esc(ue)}</h3><div class="matcard"><div class="mh"><div><b>${sel.size}</b> / ${docs.length} chapitres cochés</div><button class="btn sm ${docs.every(e => sel.has(e.id)) ? '' : 'blue'}" id="tAll">${docs.every(e => sel.has(e.id)) ? 'Tout décocher' : 'Tout cocher'}</button></div>
+      <div class="chaps">${docs.map(e => { const on = sel.has(e.id); return `<button class="chap${on ? ' on' : ''}" data-tch="${esc(e.id)}" aria-pressed="${on}"><span class="cn">${on ? '✓ ' : ''}${esc(e.title)}</span><span class="cc">${e.questions.length}</span></button>`; }).join('')}</div></div></section>
+    <section class="group"><div class="impask"><div><b>${refs.length} question${refs.length > 1 ? 's' : ''} disponible${refs.length > 1 ? 's' : ''}</b><span>${sel.size ? 'dans les banques cochées' : 'Cochez au moins un chapitre'}</span></div><button class="btn orange" id="tGo" ${refs.length ? '' : 'disabled'}>Lancer la session</button></div></section>`}
+  </div>`;
+  const re = () => { const y = window.scrollY; sesHome(); window.scrollTo(0, y); };
+  const saveSel = () => { selAll[ue] = [...sel]; store.set('tutoSel', selAll); re(); };
+  app.querySelectorAll('[data-sue]').forEach(b => b.onclick = () => { ue = b.dataset.sue; store.set('ue', ue); sesHome(); });
+  bindSesTabs(re);
+  app.querySelectorAll('[data-srule]').forEach(b => b.onclick = () => { store.set('anStrict', b.dataset.srule === '1'); re(); });
+  app.querySelectorAll('[data-tn]').forEach(b => b.onclick = () => { store.set('sesNT', +b.dataset.tn); re(); });
+  app.querySelectorAll('[data-tch]').forEach(b => b.onclick = () => { const id = b.dataset.tch; sel.has(id) ? sel.delete(id) : sel.add(id); saveSel(); });
+  const ta = $('#tAll'); if (ta) ta.onclick = () => { const all = docs.every(e => sel.has(e.id)); docs.forEach(e => all ? sel.delete(e.id) : sel.add(e.id)); saveSel(); };
+  const rs = $('#anResume'); if (rs) rs.onclick = () => { AN = saved; anRender(); };
+  const go = $('#tGo'); if (go) go.onclick = () => {
+    const start = () => {
+      const chosen = docs.filter(e => sel.has(e.id)), label = chosen.length <= 2 ? chosen.map(e => e.title).join(' + ') : chosen.length + ' chapitres';
+      const list = shuffle(refs.slice()).slice(0, N);
+      AN = { ue, title: `Ancrage tutorat · ${label} · ${ue}`, items: list.map(r => ({ e: r[0], k: r[1], n: 0 })), cur: 0, last: -1, t0: Date.now() };
+      anSave(); anRender();
+    };
+    busy ? confirmBox('Remplacer la session en cours ?', 'La session d’ancrage en cours sera remplacée.', 'Remplacer', start) : start();
+  };
+  window.scrollTo(0, 0);
+}
 /* onglet « Mes bêtes noires » : session d'ancrage sur les QCM de l'UE ratés au moins une fois (annales, banques, sessions, imports) */
 function noiresHome() {
   const refs = noiresRefs(ue), N = store.get('sesNN', 20), saved = store.get('ancrage', null), busy = saved && saved.items.some(x => x.n < AN_GOAL);
