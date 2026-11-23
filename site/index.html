@@ -1174,6 +1174,29 @@ function m3dOpen(i, st) {
 let SES = { tab: store.get('sesTab', 'flash') };
 let AN = null;                                   // session d'ancrage affichée (copie de store 'ancrage')
 const AN_GOAL = 3;                               // réussites parfaites nécessaires pour « ancrer » une question
+/* Règles renforcées (essai, désactivables dans Sessions › Ancrage › Règles) : une erreur remet la question à 0/3,
+   une question ne revient qu'après au moins 3 autres (sauf quand il en reste peu), items mélangés à chaque passage,
+   bouton « J'ai répondu au hasard », compteur de validations, onglet « Mes bêtes noires ». Règles classiques = ancien fonctionnement. */
+const anStrict = () => store.get('anStrict', true);
+const AN_GAP = 3;                                // nombre minimal d'autres questions entre deux passages d'une même question
+const hasardSet = () => store.get('hasard', {});
+/* copie de la question avec les items dans un autre ordre, relettrés A, B, C… (réponse attendue et corrections suivent) */
+function anShuffled(q, perm) {
+  const letters = q.items.map(x => x.letter), m = {};
+  const items = perm.map((oi, ni) => { m[q.items[oi].letter] = letters[ni]; return Object.assign({}, q.items[oi], { letter: letters[ni] }); });
+  const mapL = a => a ? a.map(l => m[l] || l).sort() : a, mapO = o => o ? Object.fromEntries(Object.entries(o).map(([l, v]) => [m[l] || l, v])) : o;
+  return Object.assign({}, q, { items, answer: mapL(q.answer), answer0: mapL(q.answer0), corrections: mapO(q.corrections), ctext: mapO(q.ctext), _k: '' });
+}
+/* « bêtes noires » de l'UE : questions ratées au moins une fois (tous modes) ou marquées « répondu au hasard » */
+function noiresRefs(u) {
+  const qres = store.get('qres', {}), hz = hasardSet(), out = [];
+  Object.keys(Object.assign({}, qres, hz)).forEach(id => {
+    const r = qres[id]; if (!(hz[id] || (r && r.w > 0))) return;
+    const i = id.lastIndexOf('#'), e = id.slice(0, i), k = +id.slice(i + 1), ex = byId[e];
+    if (!ex || ueOf(ex) !== u) return; const q = findQ(e, k); if (q && scorable(q)) out.push([e, k]);
+  });
+  return out;
+}
 const chapId = (m, c) => m + '\u0001' + c;
 const sesSelGet = () => (store.get('sesSel', {})[ue] || []);
 const sesSelSet = l => { const all = store.get('sesSel', {}); all[ue] = l; store.set('sesSel', all); };
@@ -1220,6 +1243,8 @@ function sesHome() {
   $('#menuBtn').hidden = true; $('#homeBtn').hidden = true; $('#subbar').hidden = true;
   $('#barTitle').textContent = 'Sessions'; document.documentElement.dataset.ue = ue;
   AN = null;
+  if (SES.tab === 'noires' && !anStrict()) SES.tab = 'ancrage';
+  if (SES.tab === 'noires') return noiresHome();
   const flash = SES.tab === 'flash', mats = sesChapters(), sel = new Set(sesSelGet());
   const refs = sesRefs(), avail = flash ? refs.length : sesCours(refs).length;
   const N = store.get(flash ? 'sesNF' : 'sesNA', flash ? 20 : 10);
@@ -1229,13 +1254,13 @@ function sesHome() {
   app.innerHTML = `<div class="home wrap">
     <nav class="uepick" aria-label="Choisir l’UE">${UES.filter(ueHas).map(u => `<button class="${u === ue ? 'on' : ''}" data-sue="${esc(u)}" aria-pressed="${u === ue}"><i class="dot"></i><b>${esc(u)}</b></button>`).join('')}</nav>
     <div class="hero"><span class="eyebrow">Sessions</span><h2>${flash ? 'Session <em>flash</em>' : 'Session <em>ancrage</em>'}</h2>
-      <p>${flash ? 'Cochez un ou plusieurs chapitres : les questions des annales sont tirées au hasard dans ces chapitres, avec leur correction et la note habituelles.' : `Questions de cours (sans exercices de calcul), en commençant par celles qui reviennent le plus dans les annales. Chaque question doit être réussie ${AN_GOAL} fois pour être ancrée : la liste tourne en boucle jusqu’à ce que tout soit ancré.`}</p></div>
-    <div class="seg" role="tablist"><button data-stab="flash" class="${flash ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${flash ? '' : 'on'}">Session ancrage</button></div>
+      <p>${flash ? 'Cochez un ou plusieurs chapitres : les questions des annales sont tirées au hasard dans ces chapitres, avec leur correction et la note habituelles.' : `Questions de cours (sans exercices de calcul), en commençant par celles qui reviennent le plus dans les annales. Chaque question doit être réussie ${AN_GOAL} fois pour être ancrée : la liste tourne en boucle jusqu’à ce que tout soit ancré.${anStrict() ? ` Règles renforcées : une erreur remet la question à 0/${AN_GOAL} (il faut ${AN_GOAL} réussites d’affilée), une question ratée ne revient qu’après au moins ${AN_GOAL} autres, et l’ordre des propositions change à chaque passage.` : ''}`}</p></div>
+    ${sesTabs()}
     ${!flash && saved && ok < saved.items.length ? `<section class="group"><h3>Session en cours</h3><div class="impask"><div><b>${esc(saved.title)}</b><span>${ok}/${saved.items.length} questions ancrées</span></div><button class="btn orange" id="anResume">Reprendre</button><button class="btn" id="anDrop">Abandonner</button></div></section>` : ''}
     ${!mats.length ? '<p class="note-src">Le classement par chapitre de cette UE n’est pas encore disponible.</p>' : `
     <section class="group"><h3>Réglages</h3><div class="bdqopts">
       <div><span class="note-src">Nombre de questions</span>${seg('sn', N, flash ? [[10, '10'], [20, '20'], [40, '40'], [60, '60']] : [[5, '5'], [10, '10'], [15, '15'], [20, '20']])}</div>
-      ${flash ? `<div><span class="note-src">Mode</span>${seg('smode', mode, [['exam', 'Examen'], ['train', 'Entraînement']])}</div>` : ''}
+      ${flash ? `<div><span class="note-src">Mode</span>${seg('smode', mode, [['exam', 'Examen'], ['train', 'Entraînement']])}</div>` : `<div><span class="note-src">Règles</span>${seg('srule', anStrict() ? 1 : 0, [[1, 'Renforcées (essai)'], [0, 'Classiques']])}</div>`}
     </div></section>
     ${mats.map((M, mi) => { const all = M.chapitres.every(C => sel.has(chapId(M.nom, C.nom))); return `<section class="group matiere"><h3>${esc(M.nom)}</h3>
       <div class="matcard"><div class="mh"><div><b>${M.chapitres.filter(C => sel.has(chapId(M.nom, C.nom))).length}</b> / ${M.chapitres.length} chapitres cochés</div><button class="btn sm ${all ? '' : 'blue'}" data-sall="${mi}">${all ? 'Tout décocher' : 'Tout cocher'}</button></div>
@@ -1244,7 +1269,8 @@ function sesHome() {
   </div>`;
   const re = () => { const y = window.scrollY; sesHome(); window.scrollTo(0, y); };
   app.querySelectorAll('[data-sue]').forEach(b => b.onclick = () => { ue = b.dataset.sue; store.set('ue', ue); sesHome(); });
-  app.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { SES.tab = b.dataset.stab; store.set('sesTab', SES.tab); re(); });
+  bindSesTabs(re);
+  app.querySelectorAll('[data-srule]').forEach(b => b.onclick = () => { store.set('anStrict', b.dataset.srule === '1'); re(); });
   app.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { store.set(flash ? 'sesNF' : 'sesNA', +b.dataset.sn); re(); });
   app.querySelectorAll('[data-smode]').forEach(b => b.onclick = () => { mode = b.dataset.smode; store.set('mode', mode); re(); });
   app.querySelectorAll('[data-sch]').forEach(b => b.onclick = () => { const [mi, ci] = b.dataset.sch.split('|'), M = mats[+mi], id = chapId(M.nom, M.chapitres[+ci].nom); sel.has(id) ? sel.delete(id) : sel.add(id); sesSelSet([...sel]); re(); });
@@ -1263,11 +1289,49 @@ function sesHome() {
   };
   window.scrollTo(0, 0);
 }
-function anSave() { if (AN) store.set('ancrage', { ue: AN.ue, title: AN.title, items: AN.items, cur: AN.cur, last: AN.last, t0: AN.t0 }); }
+const sesTabs = () => `<div class="seg" role="tablist"><button data-stab="flash" class="${SES.tab === 'flash' ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${SES.tab === 'ancrage' ? 'on' : ''}">Session ancrage</button>${anStrict() ? `<button data-stab="noires" class="${SES.tab === 'noires' ? 'on' : ''}">Mes bêtes noires</button>` : ''}</div>`;
+function bindSesTabs(re) { app.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { SES.tab = b.dataset.stab; store.set('sesTab', SES.tab); re(); }); }
+/* onglet « Mes bêtes noires » : session d'ancrage sur les QCM de l'UE ratés au moins une fois (annales, banques, sessions, imports) */
+function noiresHome() {
+  const refs = noiresRefs(ue), N = store.get('sesNN', 20), saved = store.get('ancrage', null), busy = saved && saved.items.some(x => x.n < AN_GOAL);
+  const seg = (name, cur, opts) => `<div class="seg sm" role="group">${opts.map(([v, l]) => `<button data-${name}="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  app.innerHTML = `<div class="home wrap">
+    <nav class="uepick" aria-label="Choisir l’UE">${UES.map(u => `<button class="${u === ue ? 'on' : ''}" data-sue="${esc(u)}" aria-pressed="${u === ue}"><i class="dot"></i><b>${esc(u)}</b></button>`).join('')}</nav>
+    <div class="hero"><span class="eyebrow">Sessions</span><h2>Mes <em>bêtes noires</em></h2>
+      <p>Tous les QCM de l’UE ratés au moins une fois (annales, banques, sessions flash ou ancrage, imports), ou marqués « répondu au hasard ». Ils repassent en session ancrage, règles renforcées : ${AN_GOAL} réussites d’affilée pour chacun.</p></div>
+    ${sesTabs()}
+    ${busy ? `<section class="group"><h3>Session en cours</h3><div class="impask"><div><b>${esc(saved.title)}</b><span>${saved.items.filter(x => x.n >= AN_GOAL).length}/${saved.items.length} questions ancrées</span></div><button class="btn orange" id="anResume">Reprendre</button></div></section>` : ''}
+    <section class="group"><h3>Réglages</h3><div class="bdqopts"><div><span class="note-src">Nombre de questions</span>${seg('nn', N, [[10, '10'], [20, '20'], [40, '40'], [0, 'Toutes']])}</div></div></section>
+    <section class="group"><div class="impask"><div><b>${refs.length} bête${refs.length > 1 ? 's' : ''} noire${refs.length > 1 ? 's' : ''} en ${esc(ue)}</b><span>${refs.length ? 'les plus ratées en premier' : 'Aucune erreur enregistrée pour cette UE pour l’instant'}</span></div><button class="btn orange" id="nnGo" ${refs.length ? '' : 'disabled'}>Lancer la session</button></div></section>
+  </div>`;
+  const re = () => { const y = window.scrollY; sesHome(); window.scrollTo(0, y); };
+  app.querySelectorAll('[data-sue]').forEach(b => b.onclick = () => { ue = b.dataset.sue; store.set('ue', ue); sesHome(); });
+  bindSesTabs(re);
+  app.querySelectorAll('[data-nn]').forEach(b => b.onclick = () => { store.set('sesNN', +b.dataset.nn); re(); });
+  const rs = $('#anResume'); if (rs) rs.onclick = () => { AN = saved; anRender(); };
+  const go = $('#nnGo'); if (go) go.onclick = () => {
+    const start = () => {
+      const qres = store.get('qres', {}), w = r => (qres[r[0] + '#' + r[1]] || {}).w || 0;
+      const list = shuffle(refs.slice()).sort((a, b) => w(b) - w(a)).slice(0, N || refs.length);
+      AN = { ue, title: `Bêtes noires · ${ue}`, items: list.map(r => ({ e: r[0], k: r[1], n: 0 })), cur: 0, last: -1, t0: Date.now() };
+      anSave(); anRender();
+    };
+    busy ? confirmBox('Remplacer la session en cours ?', 'La session d’ancrage en cours sera remplacée par la session « bêtes noires ».', 'Remplacer', start) : start();
+  };
+  window.scrollTo(0, 0);
+}
+function anSave() { if (AN) store.set('ancrage', { ue: AN.ue, title: AN.title, items: AN.items, cur: AN.cur, last: AN.last, t0: AN.t0, turn: AN.turn || 0, perm: AN.perm, permFor: AN.permFor }); }
 /* question suivante : on parcourt la liste en boucle à partir de la position courante, en sautant les questions déjà ancrées ;
-   on évite la question qu'on vient de faire s'il en reste une autre */
+   on évite la question qu'on vient de faire s'il en reste une autre.
+   Règles renforcées : une question ne revient qu'après au moins AN_GAP autres (moins quand il en reste peu) ; sinon la plus ancienne. */
 function anNext() {
   const L = AN.items.length;
+  if (anStrict()) {
+    const left = AN.items.map((x, i) => i).filter(i => AN.items[i].n < AN_GOAL); if (!left.length) return -1;
+    const gap = Math.min(AN_GAP, left.length - 1), turn = AN.turn || 0, ago = i => AN.items[i].at == null ? Infinity : turn - AN.items[i].at;
+    for (let s = 1; s <= L; s++) { const i = (AN.cur + s) % L; if (AN.items[i].n < AN_GOAL && ago(i) > gap) return i; }
+    return left.slice().sort((a, b) => ago(b) - ago(a))[0];
+  }
   for (let s = 1; s <= L; s++) { const i = (AN.cur + s) % L; if (AN.items[i].n < AN_GOAL && (i !== AN.cur || L === 1)) return i; }
   return AN.items[AN.cur].n < AN_GOAL ? AN.cur : -1;
 }
@@ -1276,8 +1340,9 @@ function anRender() {
   if (AN.ue !== ue && UES.includes(AN.ue)) { ue = AN.ue; store.set('ue', ue); }
   $('#menuBtn').hidden = true; $('#homeBtn').hidden = false; $('#subbar').hidden = true;
   $('#barTitle').textContent = AN.title; document.documentElement.dataset.ue = ue;
-  const L = AN.items.length, ok = AN.items.filter(x => x.n >= AN_GOAL).length;
-  const head = `<div class="panel"><div class="who">Session ancrage</div><div class="prog"><span>${ok}/${L} questions ancrées</span><div class="bar"><i style="width:${L ? ok / L * 100 : 0}%"></i></div></div></div>`;
+  const L = AN.items.length, ok = AN.items.filter(x => x.n >= AN_GOAL).length, strict = anStrict();
+  const val = AN.items.reduce((a, x) => a + Math.min(x.n, AN_GOAL), 0), VT = L * AN_GOAL;
+  const head = `<div class="panel"><div class="who">Session ancrage</div><div class="prog"><span>${ok}/${L} questions ancrées${strict ? ` · ${val}/${VT} validations` : ''}</span><div class="bar"><i style="width:${strict ? (VT ? val / VT * 100 : 0) : (L ? ok / L * 100 : 0)}%"></i></div></div></div>`;
   if (ok >= L && !AN.res) {
     app.innerHTML = `<div class="home wrap">${head}<div class="hero"><span class="eyebrow">Terminé</span><h2>Tout est <em>ancré</em></h2><p>Les ${L} questions ont été réussies ${AN_GOAL} fois chacune.</p></div><div><button class="btn orange" id="anEnd">Retour aux sessions</button></div></div>`;
     store.set('ancrage', null);
@@ -1285,7 +1350,10 @@ function anRender() {
     window.scrollTo(0, 0); return;
   }
   if (!AN.res && AN.items[AN.cur].n >= AN_GOAL || !findQ(AN.items[AN.cur].e, AN.items[AN.cur].k)) { const nx = anNext(); if (nx < 0) { AN.items.forEach(x => { if (!findQ(x.e, x.k)) x.n = AN_GOAL; }); return anRender(); } AN.cur = nx; }
-  const it = AN.items[AN.cur], q = findQ(it.e, it.k), multi = q.type !== 'QRU';
+  const it = AN.items[AN.cur], q0 = findQ(it.e, it.k), multi = q0.type !== 'QRU';
+  // règles renforcées : ordre des propositions tiré au sort à chaque passage (gardé tant qu'on reste sur la question)
+  if (strict && (!AN.perm || AN.permFor !== AN.cur || AN.perm.length !== q0.items.length)) { AN.perm = shuffle(q0.items.map((x, i) => i)); AN.permFor = AN.cur; anSave(); }
+  const q = strict ? anShuffled(q0, AN.perm) : q0;
   const sel = AN.sel || [], res = AN.res || null;
   app.innerHTML = `<div class="wrap" style="display:grid;gap:14px;padding-top:14px;padding-bottom:40px">${head}
     <article class="q ${res ? 'r-' + cls(res) : ''}" id="anq">
@@ -1298,8 +1366,8 @@ function anRender() {
         <div class="items ${res ? 'locked' : ''}" role="${multi ? 'group' : 'radiogroup'}">${q.items.map(x => { const on = sel.includes(x.letter); return `<label class="item ${on ? 'on' : ''}" data-l="${esc(x.letter)}">
           <input type="${multi ? 'checkbox' : 'radio'}" name="anq" ${on ? 'checked' : ''} ${res ? 'disabled' : ''} aria-label="Item ${esc(x.letter)}">
           <span class="box ${multi ? '' : 'round'}">${multi ? CHECK : '<i></i>'}</span><span class="L">${esc(x.letter)} -</span><span class="tx">${esc(x.text)}</span></label>`; }).join('')}</div>
-        <div class="qf"><span></span>${res ? '<button class="btn orange" id="anNext">Question suivante</button>' : `<button class="btn orange" id="anSave" ${sel.length ? '' : 'disabled'}>Corriger</button>`}</div>
-        ${res ? correctionHtml(q, sel, res) : ''}
+        <div class="qf"><span>${res && strict ? (AN.hz ? `<span class="note-src">Comptée « à revoir » : retour à 0/${AN_GOAL}</span>` : res.pts >= 1 ? '<button class="btn" id="anHz">J’ai répondu au hasard</button>' : `<span class="note-src">Erreur : retour à 0/${AN_GOAL}</span>`) : ''}</span>${res ? '<button class="btn orange" id="anNext">Question suivante</button>' : `<button class="btn orange" id="anSave" ${sel.length ? '' : 'disabled'}>Corriger</button>`}</div>
+        ${res ? (strict ? correctionHtml(q, sel, res).replace(/<div class="fixrow">[\s\S]*?<\/button><\/div>/, '') : correctionHtml(q, sel, res)) : ''}
       </div></article></div>`;
   if (!res) app.querySelectorAll('#anq .item').forEach(row => row.addEventListener('click', ev => {
     ev.preventDefault(); const l = row.dataset.l; let cur = (AN.sel || []).slice();
@@ -1309,10 +1377,13 @@ function anRender() {
   const sv = $('#anSave'); if (sv) sv.onclick = () => {
     const r = grade(q, AN.sel); AN.res = r || { pts: 0, dis: 0 };
     recordResult(it.e, it.k, r);
-    if (r && r.pts >= 1) it.n = Math.min(AN_GOAL, it.n + 1);   // une erreur ne fait pas progresser mais n'efface rien
+    if (r && r.pts >= 1) it.n = Math.min(AN_GOAL, it.n + 1);   // classique : une erreur ne fait pas progresser mais n'efface rien
+    else if (strict) it.n = 0;                                  // renforcé : une erreur remet à 0
+    AN.turn = (AN.turn || 0) + 1; it.at = AN.turn;
     AN.last = AN.cur; anSave(); const y = window.scrollY; anRender(); window.scrollTo(0, y);
   };
-  const nb = $('#anNext'); if (nb) nb.onclick = () => { AN.sel = []; AN.res = null; const nx = anNext(); if (nx >= 0) AN.cur = nx; anSave(); anRender(); };
+  const hzb = $('#anHz'); if (hzb) hzb.onclick = () => { it.n = 0; AN.hz = true; const H = hasardSet(); H[it.e + '#' + it.k] = Date.now(); store.set('hasard', H); anSave(); const y = window.scrollY; anRender(); window.scrollTo(0, y); };
+  const nb = $('#anNext'); if (nb) nb.onclick = () => { AN.sel = []; AN.res = null; AN.hz = false; AN.perm = null; const nx = anNext(); if (nx >= 0) AN.cur = nx; anSave(); anRender(); };
   app.querySelectorAll('#anq .figs img').forEach(img => img.onclick = () => zoom(img.src));
   if (!res) window.scrollTo(0, 0);
 }
