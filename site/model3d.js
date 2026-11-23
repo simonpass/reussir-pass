@@ -38,6 +38,13 @@
       stages: [['J22', 'Début des plicatures, fermeture du tube neural'], ['J23', 'Pronéphros, fin de la fusion des tubes cardiaques'], ['J24', 'Neuropore céphalique fermé, 20 paires de somites, mésonéphros'], ['J25', 'Plicatures transversales : intestin moyen, canal vitellin'], ['J26', 'Neuropore caudal fermé'], ['J27', 'Fin de la 4e semaine : 3 vésicules, 2 courbures'], ['J28', '25 paires de somites, 30 paires de tubules, pronéphros régressé']],
       note: 'Suite directe de J21 : même disque, mêmes couleurs, extrémité céphalique du côté de la membrane pharyngienne (blanche). « C’est lors de cette semaine que l’on va passer du stade de disque au stade de tube, grâce à la délimitation et à la plicature. » J22-J23 : début de la 4e semaine (le disque encore presque plat commence à se plier) ; J24-J26 : milieu ; J27-J28 : fin (embryon « branchial » et « caudé »). Le nombre de somites des jours non cités par le cours est une simple progression entre J21 (7 paires), J24 (20) et J28 (25).',
       build: buildWeek4
+    },
+    {
+      key: 'cv', organ: true, title: 'Appareil circulatoire', sub: 'J18 → fin de la 4e semaine : tube cardiaque, vaisseaux, circulation embryonnaire',
+      stages: [['J18', 'Zone cardiogène en fer à cheval, îlots de Wolff et Pander'], ['J19', 'Tubes endocardiques droit et gauche'], ['J20', 'Délimitation : les tubes gagnent la ligne médiane, aortes dorsales'], ['J22', 'Fusion des tubes, 5 renflements, 1res contractions (non efficaces)'], ['J23', 'Fin de la fusion, inflexions et courbures'], ['J24', 'Contractions efficaces, circulation intra-embryonnaire'], ['J28', 'Fin de la 4e semaine : circulations intra-, extra-embryonnaire et vitelline']],
+      note: 'Modèle à part, d’après le cours « Mise en place de l’appareil circulatoire ». J18 à J20 : disque embryonnaire vu de dessus, extrémité céphalique du côté de la membrane pharyngienne (blanche), vésicule vitelline dessous. À partir de J22 : embryon délimité vu de côté, face dorsale en haut, tête du côté du cœur. « L’appareil circulatoire est d’origine mésoblastique ou mésenchymateuse. »',
+      credit: 'Légendes d’après le cours « Mise en place de l’appareil circulatoire » (UE5, Dr Benchaib) ; « Ce qui tombe aux annales » et « Ce jour, dans les annales » : phrases copiées des corrections d’annales et de banques de QCM. Couleurs des vaisseaux, comme sur le schéma du cours : rouge = sang riche en O2 (veine ombilicale), bleu = sang pauvre en O2 (artères ombilicales), violet = sang mêlé ; orange = circulation vitelline.',
+      build: buildCirc
     }
   ];
 
@@ -338,6 +345,149 @@
     } };
   }
 
+  /* ---------------- mise en place de l'appareil circulatoire (cours Dr Benchaib) ---------------- */
+  function buildCirc(scene, reg) {
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+    const add = (id, name, desc, objs, show) => { const g = part(reg, id, name, desc, objs, show); g.userData.noBirth = true; scene.add(g); return g; };
+    const sm = x => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+    // tube de rayon variable le long d'une courbe ; o = origine (pour faire battre le cœur autour de son centre)
+    function vtube(pts, rf, seg, ring, o) {
+      seg = seg || 32; ring = ring || 12; const cv = new THREE.CatmullRomCurve3(pts), fr = cv.computeFrenetFrames(seg, false), pos = [], idx = [];
+      for (let i = 0; i <= seg; i++) { const P = cv.getPointAt(i / seg), N = fr.normals[i], B = fr.binormals[i], r = rf(i / seg); for (let j = 0; j <= ring; j++) { const a = j / ring * Math.PI * 2; pos.push(P.x + r * (Math.cos(a) * N.x + Math.sin(a) * B.x) - (o ? o.x : 0), P.y + r * (Math.cos(a) * N.y + Math.sin(a) * B.y) - (o ? o.y : 0), P.z + r * (Math.cos(a) * N.z + Math.sin(a) * B.z) - (o ? o.z : 0)); } }
+      for (let i = 0; i < seg; i++) for (let j = 0; j < ring; j++) { const a = i * (ring + 1) + j, b = a + ring + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+    }
+    const vessel = (pts, r) => vtube(pts, () => r, Math.max(16, pts.length * 8), 8);
+    const regeo = (m, g) => { m.geometry.dispose(); m.geometry = g; };
+    const blank = col => new THREE.Mesh(new THREE.BufferGeometry(), mat(col));
+    const pair = col => [-1, 1].map(sd => { const m = blank(col); m.userData.sd = sd; return m; });
+    const COL = { oxy: 0xd62828, pauvre: 0x2f5fd0, mele: 0x8e44ad, vit: 0xe67e22 };
+    const onSphere = (n, seed, ymax) => { const out = []; let k = seed; const rnd = () => (k = (k * 16807) % 2147483647) / 2147483647; while (out.length < n) { const v = V(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1); if (v.length() < .2 || v.length() > 1) continue; v.normalize(); if (v.y < ymax) out.push(v); } return out; };
+
+    /* --- repères du disque (J18 → J20) --- */
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 48), mat(C.ecto, { opacity: .5, side: THREE.DoubleSide })); disc.renderOrder = 2; disc.rotation.x = -Math.PI / 2; disc.scale.set(1, 1.42, 1); disc.position.set(0, 0, .08);
+    add('cdisc', 'Disque embryonnaire', 'Le cœur est l’organe qui se forme en premier au cours de l’embryogenèse chez les vertébrés.', disc, s => s <= 2);
+    const mp = new THREE.Mesh(new THREE.CircleGeometry(.12, 24), mat(0xffffff, { side: THREE.DoubleSide })); mp.rotation.x = -Math.PI / 2; mp.position.set(0, .015, -1.0);
+    add('cmp', 'Membrane pharyngienne', 'Zone cardiogène située cranialement à la membrane pharyngienne (MP).', mp, s => s <= 2);
+    const zcG = new THREE.TorusGeometry(.5, .075, 10, 48, Math.PI * 1.25); zcG.rotateZ(-Math.PI * .125); zcG.rotateX(-Math.PI / 2);
+    const zc = new THREE.Mesh(zcG, mat(C.meso, { opacity: .5 })); zc.position.set(0, -.04, -1.0);
+    add('czc', 'Zone cardiogène (fer à cheval)', 'Les précurseurs cardiaques, proviennent du mésoblaste latérale, les cellules migrent rostralement (= direction céphalique) et de chaque coté du disque embryonnaire, pour fusionner sur la ligne médiane en avant de la plaque neurale et de la membrane pharyngienne, pour former la zone cardiogène : région en forme de fer à cheval.\nLa zone cardiogène possède une partie intra-embryonnaire et une partie qui est extra-embryonnaire. Donc la zone cardiogène n’est pas que intra-embryonnaire ou que extra-embryonnaire.', zc, s => s <= 2);
+    const cord = []; [-1, 1].forEach(sd => [-.12, -.02, .08].forEach(a0 => { const a = a0 * Math.PI, m = sphere(.05, 0xb3122e, {}, 10); m.scale.set(1, .8, 2.2); m.position.set(sd * .5 * Math.cos(a), -.05, -1.0 - .5 * Math.sin(a)); cord.push(m); }));
+    add('ccord', 'Cordons angioblastiques', 'Condensation des précurseurs cardiaques au sein de la zone cardiogène pour donner naissance aux cordons angioblastiques.\nLes ilots intra-embryonnaires, qui ne sont pas des Ilots de Wolff & Pander, situés initialement dans de l’aire cardiogène sont angioformateurs, ils créent la paroi des vaisseaux uniquement. Au sein de la zone cardiogène se mettent en place les premiers ilots angioformateurs, en moyenne 1 jour après les premiers îlots extra-embryonnaires (Ilots de Wolff et Pander).', cord, s => s === 0);
+    const tec = pair(0xc0392b);
+    add('ctec', 'Tubes endocardiques droit et gauche', 'Vers J19, les cordons angioblastiques issus de la zone cardiogène, se creusent pour former les tubes endocardiques droits et gauches, en réponse à des signaux émis de l’entoblaste sous-jacent.\nA partir de J20, début de la délimitation, les tubes endocardiques sont déplacés vers la ligne médiane dans la région thoracique et vont fusionner dans le sens cranio-caudal pour donner le tube cardiaque primitif qui est impair et médian.', tec, s => s === 1 || s === 2);
+
+    /* --- embryon délimité (J22 → fin S4), vu de côté : z = axe céphalo-caudal (tête en z < 0), y = face dorsale --- */
+    const BC = [V(0, -.3, -1.45), V(0, .05, -1.25), V(0, .2, -.8), V(0, .22, -.2), V(0, .18, .4), V(0, .05, .95), V(0, -.2, 1.35), V(0, -.42, 1.52)];
+    const emb = new THREE.Mesh(vtube(BC, t => t < .2 ? .45 : t < .36 ? .45 - (t - .2) / .16 * .15 : Math.max(.08, .3 - (t - .36) / .64 * .24), 64, 20), mat(0xe8c4b0, { opacity: .16, side: THREE.DoubleSide }));
+    add('cemb', 'Embryon après la délimitation', '1- La plicature céphalique occasionne le passage du tube cardiaque en cours de formation d’une position partiellement extra-embryonnaire à une situation intra-embryonnaire càd intégré dans le cœlome interne.\n2- La plicature ventrale entraine la fusion des deux tubes cardiaques sur la ligne médiane.', emb, s => s >= 3);
+    const off = (pts, dy, z0, z1) => pts.filter(p => p.z >= z0 && p.z <= z1).map(p => V(p.x, p.y + dy, p.z));
+    const tn = new THREE.Mesh(vessel(off(BC, .27, -1.3, 1.36), .05), mat(C.neur)), chd = new THREE.Mesh(vessel(off(BC, .12, -1.3, 1.36), .022), mat(C.chorde)), ip = new THREE.Mesh(vessel(off(BC, -.14, -1.3, 1.36), .06), mat(C.ento));
+    add('crep', 'Repères : tube neural, chorde, intestin primitif', 'Aortes dorsales -> Artères segmentaires et Inter-segmentaires : série dorsale : le tube neural ; série latérale : le mésoblaste intermédiaire ; série ventrale : l’intestin primitif.\nLes premiers vaisseaux efférents du cœur se développent dans le mésenchyme dorsal, de chaque côté de la notochorde.', [tn, chd, ip], s => s >= 3);
+
+    // tube cardiaque : 5 renflements (truncus → sinus veineux), deux moitiés qui fusionnent dans le sens cranio-caudal
+    const HC = V(0, -.44, -.74);
+    const K0 = [V(0, -.2, -1.12), V(0, -.36, -1.02), V(0, -.5, -.8), V(0, -.46, -.56), V(0, -.4, -.36)], KD = [V(0, 0, 0), V(.07, -.02, 0), V(.2, -.1, .02), V(-.12, .08, -.12), V(-.05, .05, -.05)];
+    const SEGS = [
+      ['ctru', 'Truncus arteriosus (cono-truncus)', 0xa8324a, 0, .2, .07, 'Mise place de sillons qui déterminent cinq renflements successifs : 1) Truncus arteriosus = cono-truncus.\nBulbe Aortique = Cono-truncus + bulbe artériel. Donc pour certains auteurs : il y a Quatre renflements successifs.\nJ22 : fusion des tubes ; J23/J24 : fin de la fusion. La fusion des tubes cardiaques se fait d’avant en arrière (cranio-caudal).'],
+      ['cbul', 'Bulbe artériel (bulbus cordis)', 0xd2555a, .2, .4, .11, '2) Bulbe Artériel (BA) = Bulbus cordis.\nDes sillons séparent les différents renflements.'],
+      ['cven', 'Ventricule primitif', 0xe0675a, .4, .62, .16, '3) Ventricule Primitif (VP).\nJ23 : le tube présente des inflexions et des courbures.'],
+      ['core', 'Oreillette primitive (atrium)', 0x9b59b6, .62, .82, .14, '4) Oreillette Primitive (OP) = Atrium.'],
+      ['csin', 'Sinus veineux', 0x6c5ce7, .82, 1, .14, '5) Sinus Veineux (SV) (VCC : Veine Cardinale Commune, VV : Veine Vitelline, VO : Veine Ombilicale).\nLe sinus veineux : reçoit à la fois le sang oxygéné (veine ombilicale) et le sang pauvre en oxygène. L’embryon est donc irrigué par du sang mêlé.']
+    ];
+    const heart = SEGS.map(([id, name, col, t0, t1, r, desc], k) => { const ms = pair(col); ms.forEach(m => { m.position.copy(HC); m.userData.k = k; }); add(id, name, desc, ms, s => s >= 3); return ms; });
+    const myo = blank(0xc85a50), gel = blank(0xf3e3c6); myo.material = mat(0xc85a50, { opacity: .28 }); gel.material = mat(0xf6e7c8, { opacity: .35 }); myo.position.copy(HC); gel.position.copy(HC);
+    add('cmyo', 'Myocarde', 'A l’origine, le tube cardiaque n’est constitué que d’un endothélium = endocarde.\nDès, J22 une épaisse masse de mésoblaste splanchnopleural vient se disposer autours du tube cardiaque, celle-ci se différencie en 2 couches : le myocarde = muscle cardiaque, et la gelée cardiaque, situé contre l’endocarde.\nJ22 : 1ères contractions (non efficaces). Les battements cardiaques ont une action propulsive à partir de J24 avec des mouvements péristaltiques qui déterminent le sens du flux sanguin.', myo, s => s >= 3);
+    add('cgel', 'Gelée cardiaque', 'La gelée cardiaque est un épais manteau acellulaire permettant de séparer le myocarde de l’endocarde. La gelée cardiaque intervient dans la mise en place des valvules.', gel, s => s >= 3);
+    const peri = sphere(1, 0xf0a8a0, { opacity: .12, side: THREE.DoubleSide }, 32); peri.scale.set(.44, .36, .56); peri.position.set(.03, -.42, -.74);
+    add('cperi', 'Péricarde (sac péricardique)', '- feuillet viscéral = épicarde = péricarde viscéral, contre le cœur, provient de la splanchnopleure\n- feuillet pariétal = péricarde pariétal provient de la somatopleure, contre la cage thoracique,\n- séparé de l’épicarde par une cavité = sac péricardique.', peri, s => s >= 3);
+
+    // vaisseaux intra-embryonnaires
+    const aod = pair(COL.mele), arc = pair(COL.mele), cardA = pair(COL.mele), cardP = pair(COL.mele), cardC = pair(COL.mele);
+    add('caod', 'Aortes dorsales primitives, aorte commune', 'Les premiers vaisseaux efférents (def : qui sort d’un organe) du cœur se développent dans le mésenchyme dorsal, de chaque côté de la notochorde : deux Aortes dorsales primitives.\nFusion des parties caudales des aortes dorsales primitives, en dessous du 10ème Métamère, formant l’aorte commune.\nLes aortes dorsales primitives restent séparées dans leurs portions antérieures, et sont appelées racines aortiques droites et gauches.', aod, s => s >= 2);
+    add('carc', '1er arc aortique et aortes ventrales', 'Lors de la délimitation céphalique, les extrémités crâniales des aortes dorsales primitives sont refoulées dans la partie ventrale et vont constituer le premier arc aortique, cinq arcs aortiques supplémentaires se forment au cours des 4ème et 5ème semaines : soit un total de 6 arcs aortiques (à droite et à gauche). Ils vont constituer des anastomoses entre les deux aortes ventrales et les deux aortes dorsales primitives.', arc, s => s >= 3);
+    add('ccard', 'Veines cardinales (antérieures, postérieures, communes)', 'Les veines intra-embryonnaires apparaissent un peu plus tard que les artères. Elles sont au nombre de six et disposées de part et d’autre de la ligne médiane de l’embryon :\n- les veines cardinales antérieures (2) et postérieures (2)\n- le canal de Cuvier = la Veine Cardinale Commune (2)\nCirculation intra-embryonnaire : Tube cardiaque -> aortes ventrales -> aortes dorsales -> réseau des veines cardinales -> sinus veineux.', [...cardA, ...cardP, ...cardC], s => s >= 5);
+    const seg = []; for (let i = 0; i < 7; i++) [-1, 1].forEach(sd => [0, 1, 2].forEach(k => { const m = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, 1, 6), mat(COL.mele)); m.userData.i = i; m.userData.sd = sd; m.userData.k = k; seg.push(m); }));
+    add('cseg', 'Artères segmentaires et inter-segmentaires', 'Aortes dorsales -> Artères segmentaires et Inter-segmentaires\n- série dorsale : le tube neural.\n- série latérale : le mésoblaste intermédiaire\n- série ventrale : l’intestin primitif.', seg, s => s >= 6);
+
+    /* --- annexes : vésicule vitelline, lame choriale, îlots, troncs ombilicaux et vitellins --- */
+    const vit = sphere(1, C.vit, { opacity: .6 }, 36); vit.renderOrder = -1; const stalk = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14), mat(C.vit));
+    add('cvit', 'Vésicule vitelline (ombilicale)', 'Il existe plusieurs foyers d’hématopoïèse successifs qui prendront en charge cette fonction en cours du temps : 1- Vésicule vitelline (yolk sac) 2- Foie (liver) 3- Rate (spleen) 4- Moelle osseuse.\nA J60, la vésicule ombilicale n’a plus cette fonction hématopoïétique qui est alors assurée par des organes intra embryonnaires.', [vit, stalk]);
+    const chorG = new THREE.Group(); const plate = new THREE.Mesh(new THREE.CircleGeometry(.75, 40), mat(C.troph, { side: THREE.DoubleSide })); chorG.add(plate);
+    onSphere(26, 7, 2).forEach(v => { const c = new THREE.Mesh(new THREE.ConeGeometry(.05, .22, 8), mat(0xc9a27e)); c.geometry.rotateX(-Math.PI / 2); const rr = Math.hypot(v.x, v.y) * .68; const a = Math.atan2(v.y, v.x); c.position.set(Math.cos(a) * rr, Math.sin(a) * rr, -.11); chorG.add(c); });
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14), mat(0xd9c2a0, { opacity: .8 }));
+    add('cchor', 'Lame choriale, villosités, pédicule embryonnaire', 'S3-S4 : mise en place des îlots sanguino-formateurs (Ilots de Wolff et Pander) dans le mésenchymes extra-embryonnaire splanchnopleural (vésicule ombilicale ou vitelline), le pédicule embryonnaire et le mésenchyme extra-embryonnaire de la lame choriale.', [chorG, ped]);
+    const ilV = new THREE.Group(), ilC = new THREE.Group();
+    onSphere(26, 11, .35).forEach(v => { const g = new THREE.Group(); g.position.copy(v); for (let k = 0; k < 4; k++) { const m = sphere(.045, k ? 0xb3122e : 0xe74c3c, {}, 8); m.position.set((k % 2 - .5) * .05, (k > 1 ? .5 : -.5) * .05, 0); g.add(m); } ilV.add(g); });
+    for (let i = 0; i < 12; i++) { const a = i * 2.4, rr = .2 + (i % 4) * .13, g = new THREE.Group(); g.position.set(Math.cos(a) * rr, Math.sin(a) * rr, .03); for (let k = 0; k < 3; k++) { const m = sphere(.035, k ? 0xb3122e : 0xe74c3c, {}, 8); m.position.set((k - 1) * .035, 0, 0); g.add(m); } ilC.add(g); }
+    add('cilots', 'Îlots de Wolff et Pander (sanguino-formateurs)', 'Les premiers foyers angioformateurs, Ilots de Wolff et Pander = Ilôts sanguino-formateurs, apparaissent dans le mésoblaste splanchnopleural de la vésicule vitelline à J18 puis dans le chorion entre J18 & J22. Les Ilots de Wolff et Pander sont extra-embryonnaires.\nLes cellules périphériques, des amas cellulaires denses, donnent les parois des vaisseaux et les cellules centrales fournissent les cellules sanguines. Les hématies dérivées de cette population initiale de cellules-souches sont nucléées.', [ilV, ilC], s => s <= 4);
+    const nV = new THREE.Group(), nC = new THREE.Group();
+    for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, pts = []; for (let k = 0; k <= 10; k++) { const ph = -.25 + k / 10 * 1.2, w = a + Math.sin(k * 1.3 + i) * .25; pts.push(V(Math.cos(w) * Math.cos(ph) * 1.01, -Math.sin(ph) * 1.01, Math.sin(w) * Math.cos(ph) * 1.01)); } nV.add(new THREE.Mesh(vessel(pts, .018), mat(COL.vit))); }
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, pts = []; for (let k = 0; k <= 8; k++) { const rr = .05 + k / 8 * .62; pts.push(V(Math.cos(a + Math.sin(k + i) * .3) * rr, Math.sin(a + Math.sin(k + i) * .3) * rr, .025)); } nC.add(new THREE.Mesh(vessel(pts, .018), mat(i % 2 ? COL.pauvre : COL.oxy))); }
+    add('crvit', 'Circulation vitelline (lame vitelline)', 'Fin de la 3ème semaine : apparition de la circulation chorio-villositaire = lame choriale + villosités tertiaires, et de la circulation vitelline, située dans la lame vitelline.\nCes ébauches sanguines vont entrer en communication au début de la quatrième semaine, et se connecter à la circulation intra-embryonnaire.', nV, s => s >= 2);
+    add('crcho', 'Circulation chorio-villositaire', 'Au niveau des villosités et de la lame choriale : circulation chorio-villositaire drainée par la circulation choriale puis par les troncs ombilicaux (artères et veines). Il s’agit de la véritable circulation de nutrition, assurant les échanges sanguins entre le placenta et l’embryon (puis le fœtus).', nC, s => s >= 2);
+    const vomb = pair(COL.oxy), aomb = pair(COL.pauvre), vvit = pair(COL.vit), avit = pair(COL.vit);
+    add('cvomb', 'Veines ombilicales', 'Les deux veines ombilicales rejoignent le sinus veineux cardiaque.\nVeine ombilicale -> sinus veineux : sang oxygéné.', vomb, s => s >= 3);
+    add('caomb', 'Artères ombilicales', 'Les Deux artères ombilicales s’abouchent aux aortes dorsales primitives à proximité de leur extrémité caudale (future aorte commune).\nArtères ombilicales -> placenta : sang pauvre en oxygène.', aomb, s => s >= 3);
+    add('cvvit', 'Veines vitellines', 'Au niveau de la splanchnopleure : les troncs vitellins. Les deux veines vitellines rejoignent aussi le sinus veineux cardiaque.\nLa circulation vitelline : branchée en dérivation. Veine vitelline -> sinus veineux.', vvit, s => s >= 3);
+    add('cavit', 'Artères vitellines', 'Les deux artères vitellines s’abouchent aux aortes dorsales primitives.\nArtère vitelline -> aorte dorsale.', avit, s => s >= 3);
+    // sens du flux sanguin (à partir de J24)
+    const dots = []; for (let i = 0; i < 90; i++) { const m = sphere(.028, 0xffffff, {}, 8); m.userData.i = i; dots.push(m); }
+    add('cflux', 'Sens du flux sanguin', 'J24 : Contractions cardiaques efficaces & début d’une circulation intra-embryonnaire.\nLes battements cardiaques ont une action propulsive à partir de J24 avec des mouvements péristaltiques qui déterminent le sens du flux sanguin.', dots, s => s >= 5);
+
+    //         J18 J19 J20 J22  J23  J24 J28
+    const FU = [0, 0, 0, .5, .9, 1, 1], BEND = [0, 0, 0, .15, 1, 1, 1], MED = [0, 0, 1, 1, 1, 1, 1], FA = [0, 0, 0, 0, 1, 1, 1];
+    let fu = 0, bend = 0, med = 0, fa = 0, ph = 0, last = '', paths = [];
+    const tmp = V(0, 0, 0);
+    const between = (m, a, b, r) => { const d = b.clone().sub(a); m.position.copy(a).add(b).multiplyScalar(.5); m.scale.set(r, d.length(), r); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); };
+    function heartCurve() { return new THREE.CatmullRomCurve3(K0.map((p, i) => p.clone().addScaledVector(KD[i], bend))); }
+    const split = t => t <= fu ? 0 : .2 * sm((t - fu) / Math.max(.05, 1 - fu));
+    function hp(cv, t, sd) { const p = cv.getPointAt(Math.min(1, Math.max(0, t))); p.x += sd * split(t); return p; }
+    function aoPts(sd) {
+      if (ph < .5) return [V(sd * .14, -.07, -.85), V(sd * .14, -.07, -.3), V(sd * .14, -.07, .4), V(sd * .14, -.07, 1.0)];
+      return [V(.1, .18, -1.05), V(.1, .25, -.75), V(.1, .28, -.2), V(.1, .24, .4), V(.1, .12, .9), V(.1, -.08, 1.2)].map(p => V(sd * .1 * (p.z > .1 ? 1 - fa * sm((p.z - .1) / .35) : 1), p.y, p.z));
+    }
+    function rebuild(s) {
+      // disque : tubes endocardiques qui gagnent la ligne médiane
+      tec.forEach(m => { const sd = m.userData.sd, x = sd * (.47 - .27 * med), y = -.06 - .06 * med; regeo(m, vessel([V(x + sd * .03 * (1 - med), y, -1.22 + .1 * med), V(x, y, -.97), V(x - sd * .02, y, -.72 + .06 * med)], .055)); });
+      const hc = heartCurve();
+      heart.forEach((ms, k) => { const [, , , t0, t1, r] = SEGS[k]; ms.forEach(m => { const sd = m.userData.sd, pts = []; for (let i = 0; i <= 10; i++) pts.push(hp(hc, t0 + (t1 - t0) * i / 10, sd)); regeo(m, vtube(pts, u => r * (.72 + .28 * Math.sin(Math.PI * u)), 20, 14, HC)); }); });
+      const lim = Math.max(.2, Math.min(1, fu)), sh = []; for (let i = 0; i <= 16; i++) sh.push(hc.getPointAt(lim * i / 16));
+      regeo(myo, vtube(sh, u => .2 - .08 * Math.abs(u - .55), 24, 16, HC)); regeo(gel, vtube(sh, u => .17 - .07 * Math.abs(u - .55), 24, 14, HC));
+      const tr = hp(hc, 0, 0), sinus = sd => { const p = hp(hc, 1, sd); p.x += sd * .05; return p; };
+      paths = [];
+      aod.forEach(m => { const sd = m.userData.sd, P = aoPts(sd); regeo(m, vessel(P, .035)); if (ph >= .5) paths.push([[tr, V(sd * .09, -.14, -1.2), V(sd * .17, .04, -1.32), V(sd * .13, .17, -1.17), ...P], COL.mele, 1.1]); });
+      arc.forEach(m => { const sd = m.userData.sd; regeo(m, vessel([tr, V(sd * .09, -.14, -1.2), V(sd * .17, .04, -1.32), V(sd * .13, .17, -1.17), V(sd * .1, .18, -1.05)], .03)); });
+      cardA.forEach(m => { const sd = m.userData.sd; regeo(m, vessel([V(sd * .24, .32, -1.25), V(sd * .27, .26, -.85), V(sd * .27, .22, -.45)], .028)); });
+      cardP.forEach(m => { const sd = m.userData.sd; regeo(m, vessel([V(sd * .2, .1, 1.05), V(sd * .26, .2, .4), V(sd * .27, .22, -.4)], .028)); });
+      cardC.forEach(m => { const sd = m.userData.sd; regeo(m, vessel([V(sd * .27, .22, -.42), V(sd * .3, -.05, -.4), sinus(sd)], .032)); if (s >= 5) { paths.push([[V(sd * .24, .32, -1.25), V(sd * .27, .26, -.85), V(sd * .27, .22, -.45), V(sd * .3, -.05, -.4), sinus(sd)], COL.mele, .7]); paths.push([[V(sd * .2, .1, 1.05), V(sd * .26, .2, .4), V(sd * .27, .22, -.4), V(sd * .3, -.05, -.4), sinus(sd)], COL.mele, .7]); } });
+      vomb.forEach(m => { const sd = m.userData.sd, P = [V(sd * .12, -.78, 2.12), V(sd * .1, -.5, 1.45), V(sd * .22, -.28, .95), V(sd * .3, -.22, .2), V(sd * .24, -.36, -.22), sinus(sd)]; regeo(m, vessel(P, .034)); paths.push([P, COL.oxy, 1]); });
+      aomb.forEach(m => { const sd = m.userData.sd, P = [V(sd * .03, .0, 1.05), V(sd * .1, -.25, 1.3), V(sd * .07, -.55, 1.7), V(sd * .06, -.82, 2.12)]; regeo(m, vessel(P, .03)); paths.push([P, COL.pauvre, .9]); });
+      vvit.forEach(m => { const sd = m.userData.sd, P = [V(sd * .14, -1.0, -.2), V(sd * .1, -.7, -.22), V(sd * .1, -.45, -.3), sinus(sd)]; regeo(m, vessel(P, .028)); paths.push([P, COL.vit, .8]); });
+      avit.forEach(m => { const sd = m.userData.sd, P = [V(sd * .06, .26, .1), V(sd * .1, -.05, .15), V(sd * .08, -.6, .12), V(sd * .12, -1.0, .1)]; regeo(m, vessel(P, .026)); paths.push([P, COL.vit, .8]); });
+      if (s >= 5) { const H = []; for (let i = 0; i <= 12; i++) H.push(hc.getPointAt(1 - i / 12)); paths.push([H, 0xb03a48, .8]); }
+      paths = paths.map(([P, col, sp]) => { const c = new THREE.CatmullRomCurve3(P); return { c, col, sp: sp / Math.max(.4, c.getLength()) }; });
+      dots.forEach((m, i) => { const p = paths[i % Math.max(1, paths.length)]; if (p) m.material.color.setHex(p.col); });
+      seg.forEach(m => { const { i, sd, k } = m.userData, z = -.6 + i * .25, base = V(sd * .1, .27 - Math.abs(z) * .02, z); const end = k === 0 ? V(sd * .05, .45, z) : k === 1 ? V(sd * .3, .2, z) : V(sd * .04, .06, z); between(m, base, end, 1); });
+    }
+    return { tick(s, t) {
+      const k = .07; fu += (FU[s] - fu) * k; bend += (BEND[s] - bend) * k; med += (MED[s] - med) * k; fa += (FA[s] - fa) * k; ph = s >= 3 ? 1 : 0;
+      const key = [fu, bend, med, fa].map(x => x.toFixed(3)).join() + s; if (key !== last) { last = key; rebuild(s); }
+      // vésicule vitelline, lame choriale, pédicule : disque (J18-J20) puis embryon délimité
+      const vc = ph ? V(0, -1.48, -.05) : V(0, -.66, .15), vr = ph ? .5 : .64;
+      vit.position.lerp(vc, .1); vit.scale.lerp(V(vr, vr, vr), .1);
+      const top = vit.position.clone(); top.y += vit.scale.y; if (ph) between(stalk, V(0, -.28, -.05), top, .06); else stalk.scale.set(.001, .001, .001);
+      ilV.position.copy(vit.position); ilV.scale.copy(vit.scale); nV.position.copy(vit.position); nV.scale.copy(vit.scale);
+      chorG.position.set(0, -1.0, 2.45); chorG.lookAt(0, -.3, 0); [ilC, nC].forEach(g => { g.position.copy(chorG.position); g.quaternion.copy(chorG.quaternion); });
+      between(ped, ph ? V(0, -.28, 1.15) : V(0, -.02, 1.38), V(0, -.86, 2.22), ph ? .12 : .15);
+      // battements : faibles à J22-J23 (non efficaces), péristaltiques à partir de J24 (du sinus vers le truncus)
+      const A = s >= 5 ? .16 : s >= 3 ? .05 : 0;
+      heart.forEach((ms, kk) => { const p = 1 + A * Math.max(0, Math.sin(t * 6.5 - (4 - kk) * .7)) ** 3; ms.forEach(m => m.scale.setScalar(p)); });
+      const pm = 1 + A * .6 * Math.max(0, Math.sin(t * 6.5 - 1.4)) ** 3; myo.scale.setScalar(pm); gel.scale.setScalar(pm);
+      if (s >= 5 && paths.length) dots.forEach((m, i) => { const p = paths[i % paths.length], u = (t * p.sp * .9 + (i / dots.length) * 7.3) % 1; p.c.getPointAt(u, tmp); m.position.copy(tmp); });
+    } };
+  }
+
   /* correspondance structure du modèle → notions des annales (window.SDE) */
   const ANN_MAP = {
     s1: { zp: /Éclosion/, zp2: /Éclosion/, zyg: /Zygote/, b1: /Segmentation/, b2: /Segmentation/, b3: /Segmentation|Activation/, mor: /Morula|Jonctions/, troph: /Blastocyste/, mci: /Blastocyste|Cellules souches/, blc: /Blastocyste/ },
@@ -345,14 +495,19 @@
     s3: { ecto: /Feuillets définitifs/, ento: /Chordo-mésoblaste/, meso: /Mésoblaste \(axial|Gastrulation \(/, lp: /Ligne primitive|Bourgeon caudal/, hn: /Nœud de Hensen/, mpc: /Membranes pharyngienne/, mig: /Ingression|Gastrulation \(/, cc: /Canal chordal|Processus chordal/, pch: /Plaque chordale/, cne: /Canal neurentérique/, ch: /Chorde dorsale/, ppc: /Plaque préchordale/, all: /Allantoïde/, np: /Plaque neurale|Gouttière neurale|Induction/, tn: /Gouttière neurale|Tube neural|Neurulation primaire/, neph: /Mésoblaste \(axial|néphrotomes/, tec: /Cœur/, ccn: /Crêtes neurales/, mpa: /Mésoblaste \(axial|Segmentation du mésoblaste/, mint: /Mésoblaste \(axial/, mlat: /Lame latérale/, soma: /Somatopleure|Lame latérale/, coeli: /Lame latérale|Cœlome intra/, som: /Segmentation du mésoblaste/, card: /Cœur/, ilots: /Angiogenèse/ },
     s4: { ecto: /Délimitation|Paroi ventrale/, meso: /Mésoblaste latéral|Cœlome intra/, ento: /Intestin primitif|Dérivés/, tn: /Tube neural|Neurulation primaire|Allongement du tube/, np: /Neuropores/, ccn: /Crêtes neurales/, som: /Somites \(|Somites :|Vertèbres/, arcs: /Arcs branchiaux/, pron: /Pronéphros/, meson: /Mésonéphros|Mésoblaste intermédiaire/, vit: /Lécithocèle II/, coeur: /Cœur|péricarde/, mph: /Cavité bucco|Délimitation/, mcl: /Cloaque/, all: /Allantoïde/, ch: /Vertèbres/, ves: /Vésicules cérébrales/, bcm: /Neurulation secondaire/, scl: /myotome|Vertèbres/, cw: /canal de Wolff/, ipa: /Intestin primitif|Dérivés|bucco/, ipm: /Intestin primitif|Lécithocèle II/, ipp: /Intestin primitif|Cloaque/, plac: /Stade phylotypique/ }
   };
+  ANN_MAP.cv = { czc: /Cœur/, ccord: /Cœur|Angiogenèse/, ctec: /Cœur/, cmp: /Membranes pharyngienne/, cdisc: /Cœur/, ctru: /Cœur/, cbul: /Cœur/, cven: /Cœur/, core: /Cœur/, csin: /Sinus veineux/, cmyo: /Cœur|Somatopleure/, cgel: /Cœur/, cperi: /péricarde|Somatopleure/, cilots: /Angiogenèse/, cvit: /Lécithocèle II|Lécithocèle secondaire/, crvit: /Angiogenèse/, cchor: /Cordon ombilical|Villosités/, crcho: /Villosités|Barrière placentaire/, cvomb: /Sinus veineux|Cordon ombilical/, caomb: /Cordon ombilical/, cvvit: /Sinus veineux/, ccard: /Sinus veineux/, cemb: /Délimitation|Paroi ventrale/, cflux: /Cœur/ };
+  // semaines des annales couvertes par un modèle (le modèle « appareil circulatoire » couvre les 3e et 4e semaines)
+  const weeksOf = wk => wk === 'cv' ? [3, 4] : [+wk.slice(1)];
+  const CIRC = /c(œ|oe)ur|cardi|angio|vaiss|aort|veine|art[eè]r|circul|h[ée]mat|sang|îlot|ilot|wolff|péricard|sinus/i;
   function annFor(wk, id) {
     const W = (window.SDE || []); const rx = (ANN_MAP[wk] || {})[id]; if (!rx) return [];
-    const wn = +wk.slice(1); const here = (W.find(w => w.week === wn) || { structs: [] }).structs.filter(x => rx.test(x.name));
+    const wns = weeksOf(wk); const here = W.filter(w => wns.includes(w.week)).flatMap(w => w.structs).filter(x => rx.test(x.name));
     return here.length ? here.slice(0, 2) : W.flatMap(w => w.structs).filter(x => rx.test(x.name)).slice(0, 1);
   }
   const dayNum = d => +String(d).match(/\d+/)[0];
   function eventsFor(wk, stages, i) {
-    const W = (window.SDE || []).find(w => w.week === +wk.slice(1)); if (!W) return [];
+    const wns = weeksOf(wk), Ws = (window.SDE || []).filter(w => wns.includes(w.week)); if (!Ws.length) return [];
+    const W = { stages: Ws.flatMap(w => w.stages).map(x => wk === 'cv' ? Object.assign({}, x, { events: x.events.filter(e => CIRC.test(e.t)) }) : x).filter(x => x.events.length) };
     const ds = stages.map(st => dayNum(st[0]));
     return W.stages.filter(x => { const d = dayNum(x.day); let best = 0; ds.forEach((v, k) => { if (Math.abs(v - d) < Math.abs(ds[best] - d) || (Math.abs(v - d) === Math.abs(ds[best] - d) && v > ds[best])) best = k; }); return best === i; }).flatMap(x => x.events.map(e => Object.assign({ day: x.day }, e)));
   }
@@ -364,7 +519,11 @@
     ['ecto', 'Ectoblaste', ['ecto', 'epi', 'plac', 'memb']],
     ['ento', 'Entoblaste', ['ento', 'hyp', 'vit', 'arcs', 'mph', 'mcl', 'mpc', 'ipa', 'ipm', 'ipp']],
     ['annexes', 'Annexes & cavités', ['amn', 'lec1', 'lec2', 'mag', 'coel', 'ped', 'all', 'blc']],
-    ['oeuf', 'Œuf & trophoblaste', ['zp', 'zp2', 'zyg', 'mor', 'troph', 'mci', 'tro', 'ct', 'sct', 'lac', 'plug', 'endo']]
+    ['oeuf', 'Œuf & trophoblaste', ['zp', 'zp2', 'zyg', 'mor', 'troph', 'mci', 'tro', 'ct', 'sct', 'lac', 'plug', 'endo']],
+    ['ccoeur', 'Cœur', ['czc', 'ccord', 'ctec', 'ctru', 'cbul', 'cven', 'core', 'csin', 'cmyo', 'cgel', 'cperi']],
+    ['cvx', 'Vaisseaux de l’embryon', ['caod', 'carc', 'ccard', 'cseg', 'cflux']],
+    ['cext', 'Annexes & vaisseaux extra-embryonnaires', ['cvit', 'cchor', 'cilots', 'crvit', 'crcho', 'cvomb', 'caomb', 'cvvit', 'cavit']],
+    ['crep', 'Repères', ['cdisc', 'cmp', 'cemb', 'crep']]
   ];
   /* ---------------- visionneuse ---------------- */
   // sélection « Afficher » : familles choisies (famSel) + structures cochées une à une (filt), conservées d'un jour et d'une semaine à l'autre
@@ -386,15 +545,17 @@
       <div class="m3d-info" id="m3dInfo"><b>Touchez une structure</b><span>ou choisissez-la dans la légende.</span></div>
       <div class="m3d-new" id="m3dNew" aria-live="polite"></div>
       <div class="m3d-side"><section class="m3d-figs"><h4>Schémas du cours</h4><div id="m3dFigs"></div></section><section class="m3d-ann"><h4>Ce jour, dans les annales</h4><ul id="m3dEvents"></ul></section></div>
-      <p class="note-src">${esc(w.note)} Faites tourner avec un doigt, zoomez en pinçant ; ← → : jour précédent / suivant. Légendes d’après le cours d’embryologie (UE5, Pr Labrune) ; « Ce qui tombe aux annales » et « Ce jour, dans les annales » : phrases copiées des corrections d’annales et de banques de QCM. Couleurs : ectoblaste bleu, mésoblaste rouge, entoblaste jaune.</p>
+      <p class="note-src">${esc(w.note)} Faites tourner avec un doigt, zoomez en pinçant ; ← → : jour précédent / suivant. ${esc(w.credit || 'Légendes d’après le cours d’embryologie (UE5, Pr Labrune) ; « Ce qui tombe aux annales » et « Ce jour, dans les annales » : phrases copiées des corrections d’annales et de banques de QCM. Couleurs : ectoblaste bleu, mésoblaste rouge, entoblaste jaune.')}</p>
     </div>`;
     try { await load(); } catch (e) { { const l = host.querySelector('.m3d-load'); l.classList.add('err'); l.textContent = 'Le modèle 3D n’a pas pu être chargé (connexion internet nécessaire).'; } return; }
     const box = host.querySelector('#m3dCanvas'); box.innerHTML = '';
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.localClippingEnabled = true; box.appendChild(renderer.domElement);
     const scene = new THREE.Scene(); const cam = new THREE.PerspectiveCamera(40, 1, .05, 100);
-    const home = { s1: [0, 1.6, 4.6], s2: [3.2, 2.6, 6.2], s3: [0, 4.2, 3.2], s4: [3.6, 3.0, 4.4] }[w.key];
+    const camDisc = [3.2, 3.6, 1.2], tgtDisc = [0, -.3, -.1];
+    const home = { s1: [0, 1.6, 4.6], s2: [3.2, 2.6, 6.2], s3: [0, 4.2, 3.2], s4: [3.6, 3.0, 4.4], cv: [4.6, 1.5, -.5] }[w.key];
+    const tgt0 = { s2: [0, -.3, 0], cv: [0, -.65, .15] }[w.key] || [0, 0, 0];
     cam.position.set(...home);
-    const ctl = new THREE.OrbitControls(cam, renderer.domElement); ctl.enableDamping = true; ctl.target.set(0, w.key === 's2' ? -.3 : 0, 0);
+    const ctl = new THREE.OrbitControls(cam, renderer.domElement); ctl.enableDamping = true; ctl.target.set(...tgt0);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, .9)); const dl = new THREE.DirectionalLight(0xffffff, .8); dl.position.set(3, 5, 4); scene.add(dl);
     const reg = []; const ui = {}; const api = w.build(scene, reg, ui);
     // état d'animation de chaque partie : a = 0 (cachée) → 1 (visible)
@@ -467,7 +628,7 @@
       const ev = eventsFor(w.key, w.stages, stage);
       evBox.innerHTML = ev.length ? ev.slice(0, 8).map(e => `<li><b>${esc(e.day)}</b> « ${esc(e.t)} »<small>${esc(e.s)}</small></li>`).join('') : '<li class="note-src">Aucune question d’annales datée de ce jour.</li>';
     }
-    function setStage(i) { const prev = stage; stage = i; if (i >= 0) setTimeout(drawSide, 0); host.querySelectorAll('[data-st]').forEach(b => { b.classList.toggle('on', +b.dataset.st === i); if (+b.dataset.st === i) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }); reg.forEach(g => { if (g.userData.show(i) && (!g.userData.show(prev) || prev === i && g.userData.a < .5)) born(g); }); const ref = i - 1; if (ref >= 0) { newIds = new Set(reg.filter(g => g.userData.show(i) && !g.userData.show(ref)).map(g => g.userData.id)); goneIds = reg.filter(g => !g.userData.show(i) && g.userData.show(ref)).map(g => g.userData.id); } else { newIds = new Set(); goneIds = []; } if (sel && !reg.find(p => p.userData.id === sel).userData.show(i)) select(sel); drawLegend(); drawNew(i - 1); }
+    function setStage(i) { const prev = stage; stage = i; if (w.key === 'cv' && (prev === -1 || (prev <= 2) !== (i <= 2))) { if (i <= 2) { cam.position.set(...camDisc); ctl.target.set(...tgtDisc); } else { cam.position.set(...home); ctl.target.set(...tgt0); } } if (i >= 0) setTimeout(drawSide, 0); host.querySelectorAll('[data-st]').forEach(b => { b.classList.toggle('on', +b.dataset.st === i); if (+b.dataset.st === i) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }); reg.forEach(g => { if (g.userData.show(i) && (!g.userData.show(prev) || prev === i && g.userData.a < .5)) born(g); }); const ref = i - 1; if (ref >= 0) { newIds = new Set(reg.filter(g => g.userData.show(i) && !g.userData.show(ref)).map(g => g.userData.id)); goneIds = reg.filter(g => !g.userData.show(i) && g.userData.show(ref)).map(g => g.userData.id); } else { newIds = new Set(); goneIds = []; } if (sel && !reg.find(p => p.userData.id === sel).userData.show(i)) select(sel); drawLegend(); drawNew(i - 1); }
     let play = null; const pb = host.querySelector('#m3dPlay');
     function setPlay(on) { clearInterval(play); play = null; pb.classList.toggle('on', on); pb.setAttribute('aria-pressed', on); pb.textContent = on ? '❚❚ Pause' : '▶ Lecture'; if (on) { play = setInterval(() => { if (!document.body.contains(box)) { clearInterval(play); return; } setStage((stage + 1) % w.stages.length); }, 2600); } }
     pb.onclick = () => { if (!play && stage === w.stages.length - 1) setStage(0); setPlay(!play); };
@@ -494,7 +655,7 @@
     lvlIn.oninput = placeCut;
     const sb = host.querySelector('#m3dSpread'); if (sb) { let on = false; sb.onclick = () => { on = !on; sb.classList.toggle('on', on); sb.setAttribute('aria-pressed', on); ui.spread && ui.spread(on ? 1 : 0); }; }
     const hb = host.querySelector('#m3dHl'); hb.onclick = () => { hl = !hl; hb.classList.toggle('on', hl); hb.setAttribute('aria-pressed', hl); };
-    host.querySelector('#m3dReset').onclick = () => { cam.position.set(...home); ctl.target.set(0, w.key === 's2' ? -.3 : 0, 0); };
+    host.querySelector('#m3dReset').onclick = () => { const d = w.key === 'cv' && stage <= 2; cam.position.set(...(d ? camDisc : home)); ctl.target.set(...(d ? tgtDisc : tgt0)); };
     // sélection au toucher (un appui court, pas un glissement)
     const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
     let idle = 0; ctl.autoRotate = true; ctl.autoRotateSpeed = .7;
@@ -522,5 +683,5 @@
     const loop = () => { if (!document.body.contains(box)) { stop(); return; } const t = performance.now() / 1000; if (!cut && !ctl.autoRotate && idle && performance.now() - idle > 7000) ctl.autoRotate = true; ctl.update(); api && api.tick && api.tick(stage, t); animate(); renderer.render(scene, cam); cur.raf = requestAnimationFrame(loop); };
     cur = { renderer, onResize, onKey, raf: 0 }; loop();
   }
-  window.Model3D = { WEEKS: WEEKS.map(w => ({ key: w.key, title: w.title, sub: w.sub, stages: w.stages })), open, stop };
+  window.Model3D = { WEEKS: WEEKS.map(w => ({ key: w.key, title: w.title, sub: w.sub, stages: w.stages, organ: !!w.organ })), open, stop };
 })();

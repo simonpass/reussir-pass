@@ -1139,14 +1139,16 @@ function m3dHome() {
       <button role="tab" data-view="fc" aria-selected="false">Flashcards</button>
     </div>
     <div class="hero"><span class="eyebrow">UE5 · Embryologie</span><h2>Modèles 3D <em>interactifs</em></h2>
-      <p>Les 4 premières semaines du développement embryonnaire. Faites tourner l’embryon, avancez jour par jour et touchez une structure pour lire ce qu’en dit le cours.</p></div>
-    <section class="group"><h3>Semaines de développement</h3><div class="cards">${W.map((w, i) => `<button class="exam m3dcard" data-m3d="${i}"><span class="pill">${esc(w.title)}</span><span class="t">${esc(w.sub.split(' : ')[1] || w.sub)}</span><span class="m">${esc(w.sub.split(' : ')[0])}</span></button>`).join('')}</div></section>
+      <p>Les 4 premières semaines du développement embryonnaire, et la mise en place de l’appareil circulatoire. Faites tourner l’embryon, avancez jour par jour et touchez une structure pour lire ce qu’en dit le cours.</p></div>
+    <section class="group"><h3>Semaines de développement</h3><div class="cards">${W.map((w, i) => w.organ ? '' : m3dCard(w, i)).join('')}</div></section>
+    ${W.some(w => w.organ) ? `<section class="group"><h3>Mise en place des organes</h3><div class="cards">${W.map((w, i) => w.organ ? m3dCard(w, i) : '').join('')}</div></section>` : ''}
     ${friseHTML(W)}
   </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { if (b.dataset.view === view) return; view = b.dataset.view; store.set('view', view); home(); });
   app.querySelectorAll('[data-m3d]').forEach(b => b.onclick = () => m3dOpen(+b.dataset.m3d, +(b.dataset.st || 0)));
   window.scrollTo(0, 0);
 }
+function m3dCard(w, i) { return `<button class="exam m3dcard" data-m3d="${i}"><span class="pill">${esc(w.title)}</span><span class="t">${esc(w.sub.split(' : ')[1] || w.sub)}</span><span class="m">${esc(w.sub.split(' : ')[0])}</span></button>`; }
 /* Frise des 4 semaines : étapes et phrases des corrections d'annales (window.SDE), reliées au jour le plus proche du modèle 3D. */
 function friseHTML(W) {
   const S = window.SDE || []; if (!S.length) return '';
