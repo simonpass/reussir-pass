@@ -17,6 +17,7 @@
   - MX et SPF OVH conservés.
 - Le domaine personnalisé GitHub Pages est réglé sur `reussir-pass.fr`, HTTPS forcé.
 - Ajouts du 18/11 : frise des 4 semaines (#6), retrait de « BRAVO CHRISTOPHE ! » (#8), jeu des coupes d'histologie (120 coupes), menu ☰, Planning, écrans de chargement et animations (#9), style « cahier » sobre (#10), demandes personnalisées (rubrique « Mes demandes »).
+- 23/11 : modèle 3D à part « Appareil circulatoire » (PR #22, issue #21), d’après le cours du Dr Benchaib (`cours christophe/cours-embryo/UE5 EmBryo/05_Mise en place…`) : 7 étapes J18 → J28, 20 schémas du cours (`img/cours/cv-*.webp`, clé `cv` de `cours3d.js`), rubrique « Mise en place des organes » des Modèles 3D. Outils d’extraction des schémas : `layout.mjs`, `render-pages.ps1` et `cvfigs.js` (dans le dossier temporaire de l’ancienne session, à refaire si besoin).
 - Ticket OVH CS17180422 : annulation de la commande en double n° 263780401 (5,99 €), à suivre. La commande gardée est la n° 263780358.
 
 ## Reste à faire, dans l'ordre
@@ -25,7 +26,7 @@
 3. Netlify : Christophe a emporté sa progression ; le site Netlify redirige (301) vers reussir-pass.fr depuis le 18/11 (issue #2 fermée).
 4. En attente :
    - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
-   - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`), attendre la réponse ;
+   - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`). Au 23/11 : aucune réponse ; l’adresse univ-lyon1 a renvoyé un message anti-spam (CAPTCHA) que **Simon doit valider lui-même** dans Gmail, sinon le mail n’est pas transmis. La copie à tutoratpaceslyonest@gmail.com est partie normalement.
    - idées d'abonnement payant et d'application mobile.
 
 ## Comptes (Supabase, projet « pass-facile », réf. uwliytqqfbgxvnnqaadl, organisation pass-facile du compte Supabase de Simon)
