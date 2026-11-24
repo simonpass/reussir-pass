@@ -1,6 +1,6 @@
 # Reprise du projet (passage de relais entre sessions Claude)
 
-À lire en premier, avec `CLAUDE.md`. État au 18/11/2026.
+À lire en premier, avec `CLAUDE.md`. État au 24/11/2026.
 
 ## Le projet
 - Site de révision PASS (Lyon-Est) pour Christophe Pierre, ami de Simon Guerra (propriétaire).
@@ -18,6 +18,7 @@
 - Le domaine personnalisé GitHub Pages est réglé sur `reussir-pass.fr`, HTTPS forcé.
 - Ajouts du 18/11 : frise des 4 semaines (#6), retrait de « BRAVO CHRISTOPHE ! » (#8), jeu des coupes d'histologie (120 coupes), menu ☰, Planning, écrans de chargement et animations (#9), style « cahier » sobre (#10), demandes personnalisées (rubrique « Mes demandes »).
 - 23/11 : modèle 3D à part « Appareil circulatoire » (PR #22, issue #21), d’après le cours du Dr Benchaib (`cours christophe/cours-embryo/UE5 EmBryo/05_Mise en place…`) : 7 étapes J18 → J28, 20 schémas du cours (`img/cours/cv-*.webp`, clé `cv` de `cours3d.js`), rubrique « Mise en place des organes » des Modèles 3D. Outils d’extraction des schémas : `layout.mjs`, `render-pages.ps1` et `cvfigs.js` (dans le dossier temporaire de l’ancienne session, à refaire si besoin).
+- 23-24/11 : rubrique Sessions : session flash et ancrage (PR #23), ancrage renforcé + onglet « Mes bêtes noires » (#25), onglet « Ancrage tutorat » (#26), onglet « Flash tutorat » (#27), photos sur les flashcards et schéma-réponse UE2 Acides nucléiques Q10 déplacé dans la correction (#28). Tout est fusionné dans main, aucune PR ouverte.
 - Ticket OVH CS17180422 : annulation de la commande en double n° 263780401 (5,99 €), à suivre. La commande gardée est la n° 263780358.
 
 ## Reste à faire, dans l'ordre
