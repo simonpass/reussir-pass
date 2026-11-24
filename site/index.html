@@ -824,6 +824,7 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .fixtx { width: 100%; font: inherit; font-size: 15px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; }
 .fixmine { color: var(--mid); font-size: 12.5px; }
 /* mes flashcards */
+.fcimg { display: block; max-width: 100%; max-height: 55vh; margin: 10px auto 0; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
 .addcard { border-style: dashed; background: transparent; cursor: pointer; }
 .card-row { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
 .card-row .cr-txt { flex: 1; min-width: 0; display: grid; gap: 4px; } .card-row .cr-txt span { color: var(--muted); white-space: pre-wrap; }
@@ -1381,6 +1382,25 @@ function anNext() {
   for (let s = 1; s <= L; s++) { const i = (AN.cur + s) % L; if (AN.items[i].n < AN_GOAL && (i !== AN.cur || L === 1)) return i; }
   return AN.items[AN.cur].n < AN_GOAL ? AN.cur : -1;
 }
+/* « Revoir les questions » : liste des questions de la session ; on en ouvre une pour relire l'énoncé, la réponse attendue et la correction (le compteur ne bouge pas) */
+function anReview(i) {
+  $('#homeBtn').hidden = false;
+  if (i < 0) {
+    app.innerHTML = `<div class="wrap" style="display:grid;gap:14px;padding-top:14px;padding-bottom:40px"><div class="hgrade"><button class="btn orange" id="anBack">Retour à la session</button></div>
+      <section class="group"><h3>Questions de la session</h3><div class="dem-list">${AN.items.map((x, k) => { const q = findQ(x.e, x.k); if (!q) return ''; return `<button class="card-row" data-rv="${k}" style="text-align:left"><div class="cr-txt"><b>Question ${k + 1} · ${'●'.repeat(Math.min(x.n, AN_GOAL))}${'○'.repeat(AN_GOAL - Math.min(x.n, AN_GOAL))} ${Math.min(x.n, AN_GOAL)}/${AN_GOAL}</b><span>${esc(String(q.stem).slice(0, 160))}</span><small class="note-src">${esc(byId[x.e].title)} · Q${q.num ?? x.k + 1}${x.at == null ? ' · pas encore vue' : ''}</small></div></button>`; }).join('')}</div></section></div>`;
+    app.querySelectorAll('[data-rv]').forEach(b => b.onclick = () => anReview(+b.dataset.rv));
+  } else {
+    const x = AN.items[i], q = findQ(x.e, x.k);
+    app.innerHTML = `<div class="wrap" style="display:grid;gap:14px;padding-top:14px;padding-bottom:40px"><div class="hgrade"><button class="btn" id="anBackL">← Liste des questions</button><button class="btn orange" id="anBack">Retour à la session</button></div>
+      <article class="q"><div class="qh"><span class="num">Question ${i + 1}/${AN.items.length} · ${Math.min(x.n, AN_GOAL)}/${AN_GOAL}</span></div><div class="qb">
+        <div class="note-src">${esc(byId[x.e].title)} · ${q.section ? esc(q.section) + ' · ' : ''}Q${q.num ?? x.k + 1}</div>${q.context ? `<div class="ctx">${esc(q.context)}</div>` : ''}<div class="stem">${esc(q.stem)}</div>${figHtml(q.figures)}
+        ${correctionHtml(q, q.answer || [], null).replace(/<div class="fixrow">[\s\S]*?<\/button><\/div>/, '')}</div></article></div>`;
+    $('#anBackL').onclick = () => anReview(-1);
+    app.querySelectorAll('.figs img').forEach(img => img.onclick = () => zoom(img.src));
+  }
+  $('#anBack').onclick = () => anRender();
+  window.scrollTo(0, 0);
+}
 function anRender() {
   if (!AN) return sesHome();
   if (AN.ue !== ue && UES.includes(AN.ue)) { ue = AN.ue; store.set('ue', ue); }
@@ -1388,7 +1408,7 @@ function anRender() {
   $('#barTitle').textContent = AN.title; document.documentElement.dataset.ue = ue;
   const L = AN.items.length, ok = AN.items.filter(x => x.n >= AN_GOAL).length, strict = anStrict();
   const val = AN.items.reduce((a, x) => a + Math.min(x.n, AN_GOAL), 0), VT = L * AN_GOAL;
-  const head = `<div class="panel"><div class="who">Session ancrage</div><div class="prog"><span>${ok}/${L} questions ancrées${strict ? ` · ${val}/${VT} validations` : ''}</span><div class="bar"><i style="width:${strict ? (VT ? val / VT * 100 : 0) : (L ? ok / L * 100 : 0)}%"></i></div></div></div>`;
+  const head = `<div class="panel"><div class="who">Session ancrage <button class="btn sm" id="anList">Revoir les questions</button></div><div class="prog"><span>${ok}/${L} questions ancrées${strict ? ` · ${val}/${VT} validations` : ''}</span><div class="bar"><i style="width:${strict ? (VT ? val / VT * 100 : 0) : (L ? ok / L * 100 : 0)}%"></i></div></div></div>`;
   if (ok >= L && !AN.res) {
     app.innerHTML = `<div class="home wrap">${head}<div class="hero"><span class="eyebrow">Terminé</span><h2>Tout est <em>ancré</em></h2><p>Les ${L} questions ont été réussies ${AN_GOAL} fois chacune.</p></div><div><button class="btn orange" id="anEnd">Retour aux sessions</button></div></div>`;
     store.set('ancrage', null);
@@ -1429,6 +1449,7 @@ function anRender() {
     AN.last = AN.cur; anSave(); const y = window.scrollY; anRender(); window.scrollTo(0, y);
   };
   const hzb = $('#anHz'); if (hzb) hzb.onclick = () => { it.n = 0; AN.hz = true; const H = hasardSet(); H[it.e + '#' + it.k] = Date.now(); store.set('hasard', H); anSave(); const y = window.scrollY; anRender(); window.scrollTo(0, y); };
+  const al = $('#anList'); if (al) al.onclick = () => anReview(-1);
   const nb = $('#anNext'); if (nb) nb.onclick = () => { AN.sel = []; AN.res = null; AN.hz = false; AN.perm = null; const nx = anNext(); if (nx >= 0) AN.cur = nx; anSave(); anRender(); };
   app.querySelectorAll('#anq .figs img').forEach(img => img.onclick = () => zoom(img.src));
   if (!res) window.scrollTo(0, 0);
@@ -1952,13 +1973,14 @@ function deckEdit(id, focusTitle) {
     <div class="hgrade"><button class="btn orange" id="deckRev" ${due.length ? '' : 'disabled'}>Réviser${due.length ? ' (' + due.length + ')' : ''}</button><button class="btn blue" id="deckAll" ${d.cards.length ? '' : 'disabled'}>Tout réviser</button><button class="btn" id="deckExp" ${d.cards.length ? '' : 'disabled'}>Exporter pour Anki</button><button class="btn" id="deckDel">Supprimer le paquet</button></div>
     <section class="group"><h3>Ajouter une carte</h3>
       <form class="plan-form" id="cardForm">
-        <label>Recto (question)<textarea name="recto" rows="3" maxlength="2000" required placeholder="ex. Quelles sont les phases de la mitose ?"></textarea></label>
-        <label>Verso (réponse)<textarea name="verso" rows="4" maxlength="4000" required placeholder="ex. Prophase, prométaphase, métaphase, anaphase, télophase."></textarea></label>
+        <label>Recto (question)<textarea name="recto" rows="3" maxlength="2000" placeholder="ex. Quelles sont les phases de la mitose ?"></textarea></label>
+        <label>Verso (réponse)<textarea name="verso" rows="4" maxlength="4000" placeholder="ex. Prophase, prométaphase, métaphase, anaphase, télophase."></textarea></label>
+        <div class="row"><label>Photo au recto (facultatif)<input type="file" name="pr" accept="image/*"></label><label>Photo au verso (facultatif)<input type="file" name="pv" accept="image/*"></label></div>
         <div class="hgrade"><button class="btn blue" type="submit">Ajouter la carte</button><label class="chk"><input type="checkbox" name="inv"> Créer aussi la carte inversée</label></div>
       </form></section>
     <section class="group"><h3>${d.cards.length} carte${d.cards.length > 1 ? 's' : ''}</h3>
       <div class="dem-list">${d.cards.map((c, k) => { const x = st[cardKey(d, c, k)]; return `<div class="card-row" data-ci="${k}">
-        <div class="cr-txt"><b>${esc(c.recto)}</b><span>${esc(c.verso)}</span><small class="note-src">${x ? (x.due <= now ? 'À réviser' : 'Prochaine révision le ' + new Date(x.due).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })) : 'Nouvelle'}</small></div>
+        <div class="cr-txt"><b>${c.imgR ? '📷 ' : ''}${esc(c.recto)}</b><span>${c.imgV ? '📷 ' : ''}${esc(c.verso)}</span><small class="note-src">${x ? (x.due <= now ? 'À réviser' : 'Prochaine révision le ' + new Date(x.due).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })) : 'Nouvelle'}</small></div>
         <div class="cr-act"><button class="btn" data-cedit="${k}">Modifier</button><button class="iconbtn pdel" data-cdel="${k}" aria-label="Supprimer la carte"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button></div></div>`; }).join('') || '<p class="plan-empty">Aucune carte pour l’instant.</p>'}</div></section>
   </div>`;
   const head = $('#deckHead'), re = () => { const y = window.scrollY; deckEdit(id); window.scrollTo(0, y); };
@@ -1971,19 +1993,26 @@ function deckEdit(id, focusTitle) {
   $('#deckExp').onclick = () => deckExport(d);
   $('#deckDel').onclick = () => { if (!confirm(`Supprimer le paquet « ${d.title} » et ses ${d.cards.length} cartes ? Cette action est définitive.`)) return; const D = store.get('decks', {}); delete D[id]; store.set('decks', D); toast('Paquet supprimé.'); home(); };
   const f = $('#cardForm');
-  f.onsubmit = e => {
-    e.preventDefault(); const r = f.recto.value.trim(), v = f.verso.value.trim(); if (!r || !v) return;
-    d.cards.push({ id: newId(), recto: r, verso: v }); if (f.inv.checked) d.cards.push({ id: newId(), recto: v, verso: r });
+  f.onsubmit = async e => {
+    e.preventDefault(); const r = f.recto.value.trim(), v = f.verso.value.trim();
+    const [ir, iv] = await Promise.all([imgData(f.pr.files[0]), imgData(f.pv.files[0])]);
+    if (!(r || ir) || !(v || iv)) { toast('Mettez un texte ou une photo de chaque côté.'); return; }
+    const card = (a, ia, b, ib) => Object.assign({ id: newId(), recto: a, verso: b }, ia ? { imgR: ia } : {}, ib ? { imgV: ib } : {});
+    d.cards.push(card(r, ir, v, iv)); if (f.inv.checked) d.cards.push(card(v, iv, r, ir));
     deckSave(d); toast(f.inv.checked ? '2 cartes ajoutées.' : 'Carte ajoutée.'); re(); setTimeout(() => { const t = $('#cardForm'); t && t.recto.focus(); }, 30);
   };
   app.querySelectorAll('[data-cdel]').forEach(b => b.onclick = () => { if (!confirm('Supprimer cette carte ?')) return; d.cards.splice(+b.dataset.cdel, 1); deckSave(d); re(); });
   app.querySelectorAll('[data-cedit]').forEach(b => b.onclick = () => {
     const k = +b.dataset.cedit, c = d.cards[k], row = app.querySelector(`[data-ci="${k}"]`);
     if (!c.id) c.id = newId();
-    row.innerHTML = `<form class="plan-form ce"><label>Recto<textarea name="recto" rows="3" maxlength="2000" required>${esc(c.recto)}</textarea></label><label>Verso<textarea name="verso" rows="4" maxlength="4000" required>${esc(c.verso)}</textarea></label><div class="hgrade"><button class="btn blue" type="submit">Enregistrer</button><button class="btn" type="button" data-cancel>Annuler</button></div></form>`;
+    row.innerHTML = `<form class="plan-form ce"><label>Recto<textarea name="recto" rows="3" maxlength="2000">${esc(c.recto)}</textarea></label><label>Verso<textarea name="verso" rows="4" maxlength="4000">${esc(c.verso)}</textarea></label><div class="row"><label>${c.imgR ? 'Remplacer la photo du recto' : 'Photo au recto'}<input type="file" name="pr" accept="image/*"></label><label>${c.imgV ? 'Remplacer la photo du verso' : 'Photo au verso'}<input type="file" name="pv" accept="image/*"></label></div>${c.imgR || c.imgV ? `<div class="hgrade">${c.imgR ? '<label class="chk"><input type="checkbox" name="xr"> Retirer la photo du recto</label>' : ''}${c.imgV ? '<label class="chk"><input type="checkbox" name="xv"> Retirer la photo du verso</label>' : ''}</div>` : ''}<div class="hgrade"><button class="btn blue" type="submit">Enregistrer</button><button class="btn" type="button" data-cancel>Annuler</button></div></form>`;
     const ef = row.querySelector('form'); ef.recto.focus();
     ef.querySelector('[data-cancel]').onclick = re;
-    ef.onsubmit = e => { e.preventDefault(); c.recto = ef.recto.value.trim() || c.recto; c.verso = ef.verso.value.trim() || c.verso; deckSave(d); re(); };
+    ef.onsubmit = async e => { e.preventDefault(); c.recto = ef.recto.value.trim() || c.recto; c.verso = ef.verso.value.trim() || c.verso;
+      const [ir, iv] = await Promise.all([imgData(ef.pr.files[0]), imgData(ef.pv.files[0])]);
+      if (ir) c.imgR = ir; else if (ef.xr && ef.xr.checked) delete c.imgR;
+      if (iv) c.imgV = iv; else if (ef.xv && ef.xv.checked) delete c.imgV;
+      deckSave(d); re(); };
   });
   window.scrollTo(0, 0);
 }
@@ -2054,13 +2083,19 @@ function fcRenderPerso(key, did, ref) {
     <div class="fcprog"><span>${FC.done} faite${FC.done > 1 ? 's' : ''} · ${FC.queue.length} restante${FC.queue.length > 1 ? 's' : ''}</span><div class="bar"><i style="width:${FC.done / (FC.done + FC.queue.length) * 100}%"></i></div></div>
     <article class="q fc pcard ${FC.shown ? 'reveal' : ''}">
       <div class="qh"><span class="num">${esc(d.ue ? d.ue + ' · ' : '')}${esc(d.title)}</span><span class="ty">Carte ${k + 1} / ${d.cards.length}</span></div>
-      <div class="qb"><div class="stem precto">${esc(c.recto)}</div>${FC.shown ? `<div class="pverso">${esc(c.verso)}</div>` : ''}</div>
+      <div class="qb"><div class="stem precto">${esc(c.recto)}</div>${c.imgR ? `<img class="fcimg" src="${c.imgR}" alt="Photo du recto">` : ''}${FC.shown ? `<div class="pverso">${esc(c.verso)}</div>${c.imgV ? `<img class="fcimg" src="${c.imgV}" alt="Photo du verso">` : ''}` : ''}</div>
     </article>
     <div class="fcbar">${FC.shown ? [['C', 'À revoir', 'again'], ['V', 'Difficile', 'hard'], ['B', 'Moyen', 'good'], ['N', 'Facile', 'easy']].map(([kk, l, cl], g) => `<button class="fcb ${cl}" data-g="${g}"><b>${l}</b><span>${fcFmt(fcNext(cur, g))}</span><kbd>${kk}</kbd></button>`).join('') : '<button class="btn blue fcshow" id="fcShow">Retourner la carte <kbd>Espace</kbd></button>'}</div>
   </div>`;
   const sh = $('#fcShow'); if (sh) sh.onclick = () => { FC.shown = true; fcRender(); };
   app.querySelectorAll('[data-g]').forEach(b => b.onclick = () => fcGrade(+b.dataset.g));
+  app.querySelectorAll('.fcimg').forEach(im => im.onclick = () => zoom(im.src));
   if (!FC.shown) window.scrollTo(0, 0);
+}
+/* photo d'une carte : réduite (1000 px max, JPEG) pour rester légère dans le stockage et la synchronisation du compte */
+function imgData(file) {
+  if (!file) return Promise.resolve(null);
+  return new Promise(res => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { const k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', .75)); }; im.onerror = () => { URL.revokeObjectURL(u); toast('Image illisible.'); res(null); }; im.src = u; });
 }
 function fcGrade(g) {
   if (!FC || !FC.shown) return;
