@@ -73,6 +73,7 @@ aside .box { position: sticky; top: 20px; }
   </div>
   <aside><div class="box"><h2>Ta formule</h2>
     <div class="plan-pick" id="plans">
+      <label><span>Découverte<small>1 annale par UE · flashcards · planning</small></span><span>0 €</span><input type="radio" name="p" value="decouverte"></label>
       <label><span>Mensuel<small>Sans engagement · 7 jours offerts</small></span><span>6,99 €</span><input type="radio" name="p" value="mensuel"></label>
       <label><span>Semestre<small>Jusqu’à la fin du concours</small></span><span>34 €</span><input type="radio" name="p" value="semestre"></label>
       <label><span>Année PASS<small>+ 3 demandes sur mesure / mois</small></span><span>49 €</span><input type="radio" name="p" value="annuel"></label>
@@ -94,13 +95,13 @@ aside .box { position: sticky; top: 20px; }
 </div>
 
 <script>
-const P = { mensuel: ['Mensuel', '6,99 €', '0,00 €', 'Puis 6,99 € par mois à partir du 8e jour. Résiliable à tout moment.', true], semestre: ['Semestre', '34,00 €', '34,00 €', 'Paiement unique, sans renouvellement automatique.', false], annuel: ['Année PASS', '49,00 €', '49,00 €', 'Paiement unique pour un an, sans renouvellement automatique.', false] };
+const P = { decouverte: ['Découverte', '0 €', '0,00 €', 'Gratuit, sans limite de durée. Passe à une formule payante quand tu veux pour tout débloquer.', false], mensuel: ['Mensuel', '6,99 €', '0,00 €', 'Puis 6,99 € par mois à partir du 8e jour. Résiliable à tout moment.', true], semestre: ['Semestre', '34,00 €', '34,00 €', 'Paiement unique, sans renouvellement automatique.', false], annuel: ['Année PASS', '49,00 €', '49,00 €', 'Paiement unique pour un an, sans renouvellement automatique.', false] };
 const q = new URLSearchParams(location.search).get('plan');
 let cur = P[q] ? q : 'mensuel';
-const set = k => { cur = k; const p = P[k]; document.getElementById('lbl').textContent = p[0]; document.getElementById('pr').textContent = p[1]; document.getElementById('tot').textContent = p[2]; document.getElementById('note').textContent = p[3]; document.getElementById('trial').hidden = !p[4]; document.getElementById('pay').textContent = p[4] ? 'Commencer l’essai gratuit' : 'Payer ' + p[2]; document.querySelector(`input[value="${k}"]`).checked = true; };
+const set = k => { cur = k; const p = P[k]; document.getElementById('lbl').textContent = p[0]; document.getElementById('pr').textContent = p[1]; document.getElementById('tot').textContent = p[2]; document.getElementById('note').textContent = p[3]; document.getElementById('trial').hidden = !p[4]; document.getElementById('pay').textContent = k === 'decouverte' ? 'Créer mon compte gratuit' : p[4] ? 'Commencer l’essai gratuit' : 'Payer ' + p[2]; document.querySelectorAll('.box')[1].querySelectorAll('.methods, #carte, .demo').forEach(x => x.hidden = k === 'decouverte'); document.querySelector(`input[value="${k}"]`).checked = true; };
 document.querySelectorAll('#plans input').forEach(i => i.onchange = () => set(i.value));
 document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { document.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x === b)); document.getElementById('carte').hidden = b.dataset.m !== 'carte'; });
-document.getElementById('pay').onclick = () => { document.getElementById('checkout').hidden = true; document.getElementById('done').hidden = false; document.getElementById('donetxt').textContent = `Ta formule ${P[cur][0]} est active (simulation). Un reçu serait envoyé par e-mail, et ton compte serait débloqué immédiatement.`; window.scrollTo(0, 0); };
+document.getElementById('pay').onclick = () => { if (cur === 'decouverte') { location.href = '../?compte=signup'; return; } document.getElementById('checkout').hidden = true; document.getElementById('done').hidden = false; document.getElementById('donetxt').textContent = `Ta formule ${P[cur][0]} est active (simulation). Un reçu serait envoyé par e-mail, et ton compte serait débloqué immédiatement.`; window.scrollTo(0, 0); };
 set(cur);
 </script>
 </body>
