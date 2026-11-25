@@ -30,6 +30,10 @@
    - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`). Au 23/11 : aucune réponse ; l’adresse univ-lyon1 a renvoyé un message anti-spam (CAPTCHA), **validé par Simon le 24/11** : le mail est maintenant délivré, attendre la réponse. La copie à tutoratpaceslyonest@gmail.com est partie normalement.
    - idées d'abonnement payant et d'application mobile.
 
+## Prototype commercial (25/11)
+- Page vitrine de démonstration : `site/prototype/index.html` → https://reussir-pass.fr/prototype/ (noindex, aucun paiement réel). Fonctions, 3 offres de démo (0 € / 6,99 €/mois / 49 €/an), FAQ.
+- Avant toute vente : accord écrit du Tutorat Lyon-Est sur les annales et banques (sinon contenu propre), micro-entreprise, CGV/mentions légales/RGPD, paiement (Stripe) et accès réservés aux abonnés dans l’appli.
+
 ## Comptes (Supabase, projet « pass-facile », réf. uwliytqqfbgxvnnqaadl, organisation pass-facile du compte Supabase de Simon)
 - Site : `site/config.js` (URL + clé publishable, publique par conception) et `site/compte.js` (inscription prénom/nom/e-mail/mot de passe, connexion, mot de passe oublié, progression synchronisée = clés `ue4:*` + épreuves importées, table `progress`).
 - Base : `supabase/schema.sql` (profiles, progress, demandes, bucket privé « demandes » ; RLS : chacun ne voit que ses lignes). Déjà exécuté le 18/11.

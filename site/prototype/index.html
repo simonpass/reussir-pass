@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Réussir PASS — révisions PASS sur iPad, téléphone et ordinateur</title>
+<meta name="description" content="Annales corrigées, sessions d'ancrage, flashcards, modèles 3D d'embryologie et coupes d'histologie pour réviser le PASS.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,500&display=swap">
+<style>
+:root { --bg: #f6f3ec; --surface: #fffdf8; --surface-2: #f1ede4; --fg: #22252a; --muted: #6a6d72; --line: #e3ddd1; --brand: #2c5d8a; --action: #c4572a; --ok: #2f7d4f; --serif: "Source Serif 4", Georgia, serif; --sans: "IBM Plex Sans", system-ui, sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1a1917; --surface: #22211e; --surface-2: #2a2825; --fg: #ece8e0; --muted: #a39f97; --line: #36342f; --brand: #7fa8cf; --action: #e07a4d; --ok: #6fbf8a; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.55; }
+a { color: var(--brand); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.proto { background: var(--fg); color: var(--bg); font-size: 13px; text-align: center; padding: 6px 12px; }
+header { border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 5; }
+header .wrap { display: flex; align-items: center; gap: 16px; min-height: 60px; }
+.logo { font-family: var(--serif); font-weight: 600; font-size: 21px; color: var(--fg); text-decoration: none; margin-right: auto; }
+.logo span { color: var(--brand); font-style: italic; }
+nav a { color: var(--muted); text-decoration: none; font-size: 15px; margin-left: 14px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 10px 20px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+.btn.primary { background: var(--action); border-color: var(--action); color: #fff; }
+.btn.blue { background: var(--brand); border-color: var(--brand); color: #fff; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(34px, 5.5vw, 54px); } h1 em, h2 em { font-weight: 500; }
+h2 { font-size: clamp(27px, 3.6vw, 36px); margin-bottom: 10px; }
+.hero { padding: 64px 0 40px; display: grid; gap: 18px; }
+.hero p { font-size: 19px; color: var(--muted); max-width: 60ch; margin: 0; }
+.hero .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.small { font-size: 14px; color: var(--muted); }
+section { padding: 44px 0; border-top: 1px solid var(--line); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+.card h3 { font-size: 20px; margin-bottom: 6px; }
+.card p { margin: 0; color: var(--muted); font-size: 15.5px; }
+.steps { counter-reset: s; display: grid; gap: 12px; margin-top: 18px; }
+.steps div { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px 14px 58px; position: relative; }
+.steps div::before { content: counter(s); position: absolute; left: 18px; top: 13px; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.price { display: grid; gap: 10px; }
+.price .amount { font-family: var(--serif); font-size: 40px; font-weight: 600; }
+.price .amount small { font-size: 16px; font-family: var(--sans); color: var(--muted); font-weight: 400; }
+.price ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15.5px; }
+.price.best { border: 2px solid var(--brand); }
+.tag { display: inline-block; font-size: 12.5px; font-weight: 700; color: var(--brand); border: 1px solid var(--brand); border-radius: 99px; padding: 1px 9px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; margin-top: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { color: var(--muted); margin: 8px 0 0; }
+footer { padding: 30px 0 50px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; place-items: center; padding: 16px; z-index: 20; }
+.modal.open { display: grid; }
+.modal .card { max-width: 460px; width: 100%; display: grid; gap: 12px; }
+.modal label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.modal input { font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--fg); }
+@media (max-width: 640px) { nav { display: none; } }
+</style>
+</head>
+<body>
+<div class="proto">Prototype — page de démonstration, aucun paiement réel.</div>
+<header><div class="wrap"><a class="logo" href="#">Réussir <span>PASS</span></a>
+  <nav><a href="#fonctions">Fonctions</a><a href="#offres">Offres</a><a href="#faq">Questions</a></nav>
+  <a class="btn blue" href="../">Ouvrir l’appli</a></div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <span class="tag">PASS · Lyon-Est</span>
+    <h1>Réviser le PASS <em>sans perdre de temps</em></h1>
+    <p>Les annales corrigées en QCM interactifs, des sessions qui font revenir ce qu’on oublie, et des outils visuels pour l’embryologie et l’histologie. Sur iPad, téléphone et ordinateur.</p>
+    <div class="cta"><button class="btn primary" data-plan="essai">Essayer gratuitement 7 jours</button><a class="btn" href="#offres">Voir les offres</a></div>
+    <span class="small">Sans engagement. Votre progression vous suit sur tous vos appareils.</span>
+  </div>
+
+  <section id="fonctions">
+    <h2>Tout pour <em>réviser efficacement</em></h2>
+    <div class="grid">
+      <div class="card"><h3>Annales corrigées</h3><p>Chaque épreuve en QCM interactif, comme le jour J : mode examen chronométré ou entraînement, correction item par item, note sur 20.</p></div>
+      <div class="card"><h3>Sessions flash</h3><p>Choisissez un ou plusieurs chapitres et le nombre de questions : un entraînement sur mesure en deux clics.</p></div>
+      <div class="card"><h3>Sessions d’ancrage</h3><p>Les questions de cours qui reviennent le plus, à réussir trois fois chacune pour être sûr de les retenir.</p></div>
+      <div class="card"><h3>Flashcards</h3><p>Vos erreurs deviennent des cartes, révisées au bon moment. Créez aussi les vôtres, importez vos paquets Anki.</p></div>
+      <div class="card"><h3>Embryologie en 3D</h3><p>Les quatre premières semaines jour par jour, coupes transversale et sagittale, et ce qui change d’un jour à l’autre.</p></div>
+      <div class="card"><h3>Coupes d’histologie</h3><p>Reconnaître la coupe, sa localisation et ses caractéristiques, avec les objectifs du cours.</p></div>
+      <div class="card"><h3>Planning</h3><p>Un calendrier de révision avec vos séances, répétées chaque jour ou chaque semaine.</p></div>
+      <div class="card"><h3>Demandes sur mesure</h3><p>Envoyez un cours : on vous en fait des flashcards, des QCM ou une fiche de synthèse.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Comment ça <em>marche</em></h2>
+    <div class="steps">
+      <div><b>Créez votre compte</b> en une minute : prénom, nom, e-mail.</div>
+      <div><b>Choisissez votre UE</b> et commencez par une session flash ou une annale.</div>
+      <div><b>Revenez chaque jour</b> : flashcards et ancrage vous font revoir ce qui n’est pas encore acquis.</div>
+    </div>
+  </section>
+
+  <section id="offres">
+    <h2>Les <em>offres</em></h2>
+    <p class="small">Prix de démonstration, à valider.</p>
+    <div class="grid">
+      <div class="card price"><h3>Découverte</h3><div class="amount">0 € <small>pour toujours</small></div>
+        <ul><li>1 annale par UE</li><li>Flashcards de vos erreurs</li><li>Planning</li></ul>
+        <button class="btn" data-plan="gratuit">Créer un compte</button></div>
+      <div class="card price best"><span class="tag">Le plus choisi</span><h3>Mensuel</h3><div class="amount">6,99 € <small>/ mois</small></div>
+        <ul><li>Toutes les annales et sessions</li><li>Ancrage, flash, bêtes noires</li><li>Modèles 3D et coupes</li><li>Sans engagement</li></ul>
+        <button class="btn primary" data-plan="mensuel">Essayer 7 jours</button></div>
+      <div class="card price"><h3>Année PASS</h3><div class="amount">49 € <small>/ an</small></div>
+        <ul><li>Tout le mensuel</li><li>3 demandes sur mesure par mois</li><li>Soit environ 4 € par mois</li></ul>
+        <button class="btn blue" data-plan="annuel">Choisir l’année</button></div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2>Questions <em>fréquentes</em></h2>
+    <details><summary>Sur quels appareils ?</summary><p>iPad, téléphone et ordinateur, dans le navigateur. On peut l’ajouter à l’écran d’accueil comme une application.</p></details>
+    <details><summary>Ma progression est-elle gardée ?</summary><p>Oui, elle est enregistrée dans votre compte et vous suit d’un appareil à l’autre.</p></details>
+    <details><summary>Puis-je arrêter quand je veux ?</summary><p>Oui, l’abonnement mensuel est sans engagement.</p></details>
+    <details><summary>D’où viennent les questions ?</summary><p>Des annales et banques de QCM, reprises mot pour mot avec leur correction et leur source.</p></details>
+  </section>
+</main>
+<footer><div class="wrap">Réussir PASS — prototype. Mentions légales, CGV et confidentialité à rédiger avant toute commercialisation.</div></footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="card">
+  <h3 id="mt">Créer un compte</h3><p class="small" id="mp"></p>
+  <label>Prénom<input autocomplete="given-name"></label><label>E-mail<input type="email" autocomplete="email"></label>
+  <button class="btn primary" id="mgo">Continuer</button><button class="btn" id="mx">Fermer</button>
+  <p class="small">Démonstration : aucune donnée n’est envoyée et aucun paiement n’est demandé.</p>
+</div></div>
+<script>
+const P = { essai: 'Essai gratuit de 7 jours, puis 6,99 €/mois.', gratuit: 'Offre Découverte, gratuite.', mensuel: 'Mensuel : 7 jours d’essai, puis 6,99 €/mois, sans engagement.', annuel: 'Année PASS : 49 € pour un an.' };
+const m = document.getElementById('modal');
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { document.getElementById('mp').textContent = P[b.dataset.plan]; m.classList.add('open'); });
+document.getElementById('mx').onclick = () => m.classList.remove('open');
+m.onclick = e => { if (e.target === m) m.classList.remove('open'); };
+document.getElementById('mgo').onclick = () => { m.querySelector('h3').textContent = 'Merci !'; document.getElementById('mp').textContent = 'Dans la version finale, le paiement sécurisé s’ouvrirait ici.'; };
+</script>
+</body>
+</html>
