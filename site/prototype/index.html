@@ -322,7 +322,7 @@ section { padding: 72px 0 8px; }
 <header><div class="wrap">
   <a class="logo" href="#">Réussir <i>PASS</i></a>
   <nav><a href="#appli">L’appli</a><a href="#tout">Tout inclus</a><a href="#essai">Essayer</a><a href="#offres">Offres</a><a href="#faq">Questions</a></nav>
-  <a class="login" href="../?compte=login">Se connecter</a><a class="btn sm" href="../?compte=signup">Créer un compte</a>
+  <a class="login" href="../?compte=login">Se connecter</a><a class="btn sm" href="paiement.html?plan=mensuel">Essai gratuit</a>
 </div></header>
 
 <main>
@@ -382,7 +382,7 @@ section { padding: 72px 0 8px; }
     <div class="sec-h rv"><span class="mono" data-n="04">Essaie la 3D</span><h2>Touche, tourne, <em>coupe.</em></h2></div>
     <div class="tri rv">
       <div><p>La 3e semaine, comme dans l’appli : fais-la tourner, change de jour.</p>
-        <p style="margin-top:16px"><a class="btn" href="../">Voir les 5 modèles dans l’appli</a></p></div>
+        <p style="margin-top:16px"><a class="btn ink" href="#offres">Débloquer les 5 modèles</a><br><span class="small" style="display:inline-block;margin-top:8px;font-size:14px;color:var(--soft)">Inclus dans toutes les formules payantes.</span></p></div>
       <div id="m3dDemo"><div class="m3d-load" style="min-height:300px;display:grid;place-items:center;color:var(--soft)">Chargement du modèle 3D…</div></div>
     </div>
   </div></section>
@@ -439,7 +439,7 @@ section { padding: 72px 0 8px; }
 <script>
 const P = { essai: 'Essai gratuit · 7 jours', gratuit: 'Découverte · 0 €', mensuel: 'Mensuel · 6,99 €/mois · 7 jours offerts', semestre: 'Semestre · 34 €', annuel: 'Année PASS · 49 €' };
 const m = document.getElementById('modal');
-document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { if (b.dataset.plan === 'gratuit') { location.href = '../?compte=signup'; return; } if (['mensuel','semestre','annuel','essai'].includes(b.dataset.plan)) { location.href = 'paiement.html?plan=' + (b.dataset.plan === 'essai' ? 'mensuel' : b.dataset.plan); return; } document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { if (b.dataset.plan === 'gratuit') { location.href = 'paiement.html?plan=decouverte'; return; } if (['mensuel','semestre','annuel','essai'].includes(b.dataset.plan)) { location.href = 'paiement.html?plan=' + (b.dataset.plan === 'essai' ? 'mensuel' : b.dataset.plan); return; } document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
 document.getElementById('mx').onclick = () => m.classList.remove('open');
 m.onclick = e => { if (e.target === m) m.classList.remove('open'); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('open'); });
