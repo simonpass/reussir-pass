@@ -298,6 +298,21 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .demo .dfin { padding: 30px 20px; text-align: center; display: grid; gap: 14px; justify-items: center; }
 .demo .dfin h3 { font-family: var(--serif); font-size: 30px; margin: 0; }
 @media (max-width: 920px) { .shots { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 8px; } .shot { flex: 0 0 82%; scroll-snap-align: center; } .shot.rv { opacity: 1; transform: none; } }
+/* ===== clarté ===== */
+body { background-image: none; }
+.heroshot { background: var(--ink); border-radius: 22px; padding: 10px; box-shadow: 0 30px 60px -34px rgba(0,0,0,.5); animation: up .9s .2s cubic-bezier(.2,.8,.2,1) both; }
+.heroshot img { display: block; width: 100%; height: auto; border-radius: 13px; aspect-ratio: 1180 / 820; background: var(--card); }
+.hero p.lead { max-width: 30ch; }
+.sec-h { grid-template-columns: 1fr; gap: 8px; margin-bottom: 28px; }
+.sec-h .mono::before { display: none; content: none; }
+.sec-h h2 { font-size: clamp(30px, 4vw, 44px); }
+section { padding: 72px 0 8px; }
+.all { border: 0; border-radius: 0; background: none; gap: 30px 40px; }
+.all > div, .all > div:nth-child(n) { border: 0 !important; padding: 0; }
+.all h3 { font-size: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.all h3 span { display: none; }
+.all ul { gap: 6px; }
+.facts { margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -313,26 +328,11 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     <div>
       <span class="mono">Pour les étudiants en PASS · Lyon-Est</span>
       <h1>Ce que tu révises, <em>tu le retiens.</em></h1>
-      <p class="lead">Les annales corrigées en QCM, des sessions qui reviennent sur <span class="hl">ce que tu oublies</span>, et l’embryologie enfin en trois dimensions.</p>
+      <p class="lead">Annales corrigées, ancrage, flashcards et embryologie en 3D. Tout pour le PASS, au même endroit.</p>
       <div class="cta"><button class="btn ink" data-plan="essai">Essayer 7 jours, gratuit</button><a class="btn" href="#offres">Voir les prix</a></div>
       <div class="note">Sans carte bancaire pour l’essai · sur iPad, téléphone et ordinateur</div>
     </div>
-    <div style="position:relative">
-      <div class="fcard" aria-hidden="true"><span class="mono">Flashcard · histologie</span><b>Collagène coloré en vert ?</b><i>Trichrome de Masson — vert lumière</i></div>
-      <div class="tab" aria-hidden="true"><div class="scr"><div class="sb"><span>9:41</span><span>●●● 82 %</span></div>
-        <div class="bar">Session ancrage · UE5 <span>6 / 10 ancrées</span></div>
-        <div class="body">
-          <div class="q-h">Question 4 · 3e semaine</div>
-          <div class="q-s">Concernant la gastrulation, quelle(s) proposition(s) est (sont) exacte(s) ?</div>
-          <div class="it ok"><b>A</b>La ligne primitive apparaît dans l’épiblaste</div>
-          <div class="it"><b>B</b>Le mésoblaste dérive de l’hypoblaste</div>
-          <div class="it ok"><b>C</b>Le nœud de Hensen est à l’extrémité céphalique de la ligne primitive</div>
-          <div class="it ko"><b>D</b>La chorde se met en place à J10</div>
-          <div class="anc"><span id="anctxt">Réussie 2 fois sur 3</span><span class="dots" id="dots"><i>●</i><i>●</i><i>○</i></span></div>
-        </div>
-      </div></div>
-      <div class="sticky">Encore une bonne réponse et elle est ancrée.</div>
-    </div>
+    <div class="heroshot"><img src="img/appli-ancrage.webp" alt="Une session d’ancrage dans l’appli" width="1180" height="820"></div>
   </div>
 
   <div class="wrap"><div class="facts rv">
