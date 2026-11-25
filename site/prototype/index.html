@@ -281,7 +281,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 <script>
 const P = { essai: 'Essai gratuit · 7 jours', gratuit: 'Découverte · 0 €', mensuel: 'Mensuel · 6,99 €/mois · 7 jours offerts', semestre: 'Semestre · 34 €', annuel: 'Année PASS · 49 €' };
 const m = document.getElementById('modal');
-document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { if (['mensuel','semestre','annuel','essai'].includes(b.dataset.plan)) { location.href = 'paiement.html?plan=' + (b.dataset.plan === 'essai' ? 'mensuel' : b.dataset.plan); return; } document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
 document.getElementById('mx').onclick = () => m.classList.remove('open');
 m.onclick = e => { if (e.target === m) m.classList.remove('open'); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('open'); });
