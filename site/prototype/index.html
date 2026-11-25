@@ -313,6 +313,8 @@ section { padding: 72px 0 8px; }
 .all h3 span { display: none; }
 .all ul { gap: 6px; }
 .facts { margin-top: 10px; }
+.faq { display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px; }
+@media (max-width: 760px) { .faq { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -407,10 +409,14 @@ section { padding: 72px 0 8px; }
   <section id="faq"><div class="wrap">
     <div class="sec-h rv"><span class="mono" data-n="06">Questions</span><h2>Ce qu’on <em>nous demande.</em></h2></div>
     <div class="faq rv">
+      <details><summary>C’est pour quelle fac ?</summary><p>Le contenu suit le programme du PASS de Lyon-Est : les annales et les banques de QCM viennent de cette faculté. Les outils (ancrage, flashcards, 3D, planning) servent à tout étudiant en PASS ou en LAS.</p></details>
+      <details><summary>L’essai gratuit, comment ça marche ?</summary><p>7 jours avec tout le contenu, sans carte bancaire. À la fin, tu choisis une formule ou tu restes en Découverte, gratuite.</p></details>
+      <details><summary>Ça remplace une prépa ?</summary><p>C’est un outil d’entraînement, pas des cours. Il te fait travailler les annales et retenir le cours, à ton rythme, pour bien moins cher qu’une prépa.</p></details>
+      <details><summary>Combien de temps par jour ?</summary><p>20 à 30 minutes suffisent : les flashcards et l’ancrage te font revoir uniquement ce qui n’est pas encore acquis.</p></details>
       <details><summary>Sur quels appareils ?</summary><p>iPad, téléphone et ordinateur, dans le navigateur. Tu peux l’ajouter à ton écran d’accueil comme une application.</p></details>
       <details><summary>Ma progression est-elle gardée ?</summary><p>Oui : elle est enregistrée dans ton compte et te suit d’un appareil à l’autre.</p></details>
-      <details><summary>Puis-je arrêter quand je veux ?</summary><p>Oui. Le mensuel est sans engagement ; le semestre et l’année ne se renouvellent pas sans ton accord.</p></details>
-      <details><summary>D’où viennent les questions ?</summary><p>Des annales et banques de QCM, reprises mot pour mot avec leur correction et leur source.</p></details>
+      <details><summary>Puis-je arrêter quand je veux ?</summary><p>Oui. Le mensuel se résilie en un clic depuis ton compte. Le semestre et l’année se paient une fois et ne se renouvellent pas d’eux-mêmes.</p></details>
+      <details><summary>D’où viennent les questions ?</summary><p>Des annales et des banques de QCM, reprises mot pour mot avec leur correction et leur source.</p></details>
     </div>
   </div></section>
 
