@@ -3,137 +3,270 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Réussir PASS — révisions PASS sur iPad, téléphone et ordinateur</title>
-<meta name="description" content="Annales corrigées, sessions d'ancrage, flashcards, modèles 3D d'embryologie et coupes d'histologie pour réviser le PASS.">
+<title>Réussir PASS — réviser le PASS, autrement</title>
+<meta name="description" content="Annales en QCM interactifs, sessions d'ancrage, flashcards, embryologie en 3D et coupes d'histologie pour le PASS.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400;1,9..144,600&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-:root { --bg: #f6f3ec; --surface: #fffdf8; --surface-2: #f1ede4; --fg: #22252a; --muted: #6a6d72; --line: #e3ddd1; --brand: #2c5d8a; --action: #c4572a; --ok: #2f7d4f; --serif: "Source Serif 4", Georgia, serif; --sans: "IBM Plex Sans", system-ui, sans-serif; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1a1917; --surface: #22211e; --surface-2: #2a2825; --fg: #ece8e0; --muted: #a39f97; --line: #36342f; --brand: #7fa8cf; --action: #e07a4d; --ok: #6fbf8a; } }
+:root {
+  --paper: #f3eee3; --card: #fbf8f1; --ink: #1d1b18; --soft: #5f5a51; --rule: #d9d1c1; --rule-2: #e8e1d3;
+  --blue: #1f4f7a; --red: #b8452a; --green: #2f6e4a; --hl: #f4d77a;
+  --serif: "Fraunces", Georgia, serif; --sans: "Instrument Sans", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #171614; --card: #201e1b; --ink: #efe9dd; --soft: #a59e90; --rule: #34302a; --rule-2: #2a2723; --blue: #8db6dc; --red: #e2805f; --green: #7cc59a; --hl: #6b5a1e; } }
+:root[data-theme="dark"] { --paper: #171614; --card: #201e1b; --ink: #efe9dd; --soft: #a59e90; --rule: #34302a; --rule-2: #2a2723; --blue: #8db6dc; --red: #e2805f; --green: #7cc59a; --hl: #6b5a1e; }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.55; }
-a { color: var(--brand); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
-.proto { background: var(--fg); color: var(--bg); font-size: 13px; text-align: center; padding: 6px 12px; }
-header { border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 5; }
-header .wrap { display: flex; align-items: center; gap: 16px; min-height: 60px; }
-.logo { font-family: var(--serif); font-weight: 600; font-size: 21px; color: var(--fg); text-decoration: none; margin-right: auto; }
-.logo span { color: var(--brand); font-style: italic; }
-nav a { color: var(--muted); text-decoration: none; font-size: 15px; margin-left: 14px; }
-.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 10px 20px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
-.btn.primary { background: var(--action); border-color: var(--action); color: #fff; }
-.btn.blue { background: var(--brand); border-color: var(--brand); color: #fff; }
-h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.15; margin: 0; }
-h1 { font-size: clamp(34px, 5.5vw, 54px); } h1 em, h2 em { font-weight: 500; }
-h2 { font-size: clamp(27px, 3.6vw, 36px); margin-bottom: 10px; }
-.hero { padding: 64px 0 40px; display: grid; gap: 18px; }
-.hero p { font-size: 19px; color: var(--muted); max-width: 60ch; margin: 0; }
-.hero .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-.small { font-size: 14px; color: var(--muted); }
-section { padding: 44px 0; border-top: 1px solid var(--line); }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
-.card h3 { font-size: 20px; margin-bottom: 6px; }
-.card p { margin: 0; color: var(--muted); font-size: 15.5px; }
-.steps { counter-reset: s; display: grid; gap: 12px; margin-top: 18px; }
-.steps div { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px 14px 58px; position: relative; }
-.steps div::before { content: counter(s); position: absolute; left: 18px; top: 13px; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
-.price { display: grid; gap: 10px; }
-.price .amount { font-family: var(--serif); font-size: 40px; font-weight: 600; }
-.price .amount small { font-size: 16px; font-family: var(--sans); color: var(--muted); font-weight: 400; }
-.price ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15.5px; }
-.price.best { border: 2px solid var(--brand); }
-.tag { display: inline-block; font-size: 12.5px; font-weight: 700; color: var(--brand); border: 1px solid var(--brand); border-radius: 99px; padding: 1px 9px; }
-details { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; margin-top: 10px; }
-summary { cursor: pointer; font-weight: 600; }
-details p { color: var(--muted); margin: 8px 0 0; }
-footer { padding: 30px 0 50px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; place-items: center; padding: 16px; z-index: 20; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
+.mono { font-family: var(--mono); font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--soft); }
+.hl { background: linear-gradient(transparent 58%, var(--hl) 58%, var(--hl) 92%, transparent 92%); padding: 0 .08em; }
+
+/* bandeau + en-tête */
+.proto { border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 11.5px; text-align: center; padding: 7px 12px; color: var(--soft); letter-spacing: .04em; }
+header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule); }
+header .wrap { display: flex; align-items: center; gap: 20px; min-height: 64px; }
+.logo { font-family: var(--serif); font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -.02em; margin-right: auto; display: flex; align-items: baseline; gap: 6px; }
+.logo i { font-weight: 400; color: var(--red); }
+nav a { text-decoration: none; font-size: 15px; color: var(--soft); margin-left: 18px; }
+nav a:hover { color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); font: inherit; font-weight: 600; font-size: 16px; text-decoration: none; cursor: pointer; transition: transform .15s, background .15s, color .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn.ink { background: var(--ink); color: var(--paper); }
+.btn.sm { min-height: 40px; padding: 0 16px; font-size: 14.5px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; padding: 70px 0 60px; }
+.hero h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(42px, 6.4vw, 80px); line-height: .98; letter-spacing: -.035em; margin: 14px 0 22px; }
+.hero h1 em { font-weight: 400; color: var(--blue); }
+.hero p.lead { font-size: 20px; color: var(--soft); max-width: 34ch; margin: 0 0 28px; }
+.hero .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.hero .note { margin-top: 16px; font-size: 14px; color: var(--soft); }
+
+/* maquette tablette */
+.tab { position: relative; background: var(--ink); border-radius: 28px; padding: 14px; box-shadow: 0 30px 60px -28px rgba(0,0,0,.45); transform: rotate(1.6deg); }
+.tab .scr { background: var(--card); border-radius: 16px; overflow: hidden; color: var(--ink); }
+.tab .bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--rule); font-family: var(--serif); font-weight: 600; font-size: 15px; }
+.tab .bar span { font-family: var(--mono); font-size: 11px; color: var(--soft); font-weight: 400; }
+.tab .body { padding: 16px; display: grid; gap: 10px; }
+.q-h { font-family: var(--mono); font-size: 11px; color: var(--soft); text-transform: uppercase; letter-spacing: .05em; }
+.q-s { font-weight: 600; font-size: 15px; line-height: 1.35; }
+.it { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; }
+.it b { font-family: var(--mono); font-size: 12px; color: var(--soft); }
+.it.ok { border-color: var(--green); background: color-mix(in srgb, var(--green) 9%, transparent); }
+.it.ok b { color: var(--green); }
+.it.ko { border-color: var(--red); background: color-mix(in srgb, var(--red) 8%, transparent); }
+.anc { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed var(--rule); font-size: 13px; color: var(--soft); }
+.dots { letter-spacing: 3px; color: var(--green); font-size: 15px; }
+.sticky { position: absolute; left: -38px; bottom: 34px; background: var(--hl); color: #2b2410; padding: 12px 14px; width: 170px; font-family: var(--serif); font-style: italic; font-size: 15px; line-height: 1.3; transform: rotate(-5deg); box-shadow: 0 10px 18px -10px rgba(0,0,0,.4); }
+
+/* bandeau chiffres */
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.facts div { padding: 22px 18px; border-left: 1px solid var(--rule); }
+.facts div:first-child { border-left: 0; }
+.facts b { display: block; font-family: var(--serif); font-size: 38px; font-weight: 600; letter-spacing: -.02em; line-height: 1; }
+.facts span { font-size: 14px; color: var(--soft); }
+
+/* sections */
+section { padding: 90px 0 20px; }
+.sec-h { display: grid; grid-template-columns: 220px 1fr; gap: 30px; margin-bottom: 34px; align-items: end; }
+.sec-h h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(32px, 4.4vw, 52px); line-height: 1.02; letter-spacing: -.03em; margin: 0; }
+.sec-h h2 em { font-weight: 400; color: var(--red); }
+
+/* index des fonctions */
+.index { border-top: 1px solid var(--ink); }
+.row { display: grid; grid-template-columns: 220px 1fr 1.1fr; gap: 30px; padding: 26px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.row .n { font-family: var(--mono); color: var(--soft); font-size: 13px; }
+.row h3 { font-family: var(--serif); font-weight: 600; font-size: 27px; margin: 0; letter-spacing: -.02em; }
+.row p { margin: 0; color: var(--soft); }
+.row:hover h3 { color: var(--blue); }
+
+/* méthode */
+.method { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--ink); }
+.method div { padding: 28px 26px 30px 0; }
+.method div + div { padding-left: 26px; border-left: 1px solid var(--rule); }
+.method .big { font-family: var(--serif); font-size: 64px; font-weight: 400; font-style: italic; color: var(--blue); line-height: 1; }
+.method h3 { font-family: var(--serif); font-size: 22px; margin: 12px 0 6px; }
+.method p { margin: 0; color: var(--soft); }
+
+/* offres */
+.plans { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); border-radius: 18px; overflow: hidden; background: var(--card); }
+.plan { padding: 26px 22px; display: grid; gap: 12px; align-content: start; border-left: 1px solid var(--rule); position: relative; }
+.plan:first-child { border-left: 0; }
+.plan h3 { font-family: var(--serif); font-size: 24px; margin: 0; }
+.plan .price { font-family: var(--serif); font-size: 46px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.plan .price small { font-family: var(--sans); font-size: 15px; color: var(--soft); font-weight: 400; letter-spacing: 0; }
+.plan ul { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 7px; font-size: 15px; }
+.plan li::before { content: "— "; color: var(--soft); }
+.plan.star { background: var(--ink); color: var(--paper); }
+.plan.star li::before, .plan.star .price small { color: color-mix(in srgb, var(--paper) 65%, transparent); }
+.plan.star .btn { border-color: var(--paper); color: var(--paper); }
+.plan.star .btn.ink { background: var(--paper); color: var(--ink); }
+.ribbon { position: absolute; top: 14px; right: 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; background: var(--hl); color: #2b2410; padding: 3px 8px; border-radius: 4px; }
+.plans-note { margin-top: 14px; font-size: 14px; color: var(--soft); }
+
+/* faq */
+.faq { border-top: 1px solid var(--ink); }
+.faq details { border-bottom: 1px solid var(--rule); padding: 20px 0; }
+.faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 20px; font-family: var(--serif); font-size: 22px; font-weight: 600; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--mono); font-weight: 400; color: var(--soft); transition: transform .2s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq p { margin: 10px 0 0; color: var(--soft); max-width: 70ch; }
+
+/* fin */
+.end { margin: 100px 0 0; padding: 70px 0; border-top: 1px solid var(--ink); text-align: center; }
+.end h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(36px, 5.4vw, 66px); letter-spacing: -.035em; line-height: 1; margin: 0 0 22px; }
+.end h2 em { font-weight: 400; color: var(--blue); }
+footer { border-top: 1px solid var(--rule); padding: 26px 0 50px; font-size: 13.5px; color: var(--soft); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+
+/* fenêtre d'inscription (démo) */
+.modal { position: fixed; inset: 0; background: rgba(10,9,8,.5); display: none; place-items: center; padding: 16px; z-index: 30; }
 .modal.open { display: grid; }
-.modal .card { max-width: 460px; width: 100%; display: grid; gap: 12px; }
-.modal label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
-.modal input { font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--fg); }
-@media (max-width: 640px) { nav { display: none; } }
+.box { background: var(--card); border: 1px solid var(--ink); border-radius: 18px; padding: 26px; max-width: 440px; width: 100%; display: grid; gap: 14px; }
+.box h3 { font-family: var(--serif); font-size: 28px; margin: 0; }
+.box label { display: grid; gap: 5px; font-size: 14px; font-weight: 600; }
+.box input { font: inherit; padding: 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); color: var(--ink); }
+
+/* apparition au défilement */
+.rv { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+.rv.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+
+@media (max-width: 920px) {
+  .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 44px; }
+  .sticky { left: auto; right: -6px; bottom: -22px; }
+  .facts { grid-template-columns: repeat(2, 1fr); } .facts div:nth-child(3) { border-left: 0; } .facts div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .sec-h, .row { grid-template-columns: 1fr; gap: 8px; }
+  .method { grid-template-columns: 1fr; } .method div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); }
+  .plans { grid-template-columns: 1fr 1fr; } .plan:nth-child(3) { border-left: 0; } .plan:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  nav { display: none; }
+}
+@media (max-width: 560px) { .plans { grid-template-columns: 1fr; } .plan { border-left: 0; border-top: 1px solid var(--rule); } .plan:first-child { border-top: 0; } }
 </style>
 </head>
 <body>
-<div class="proto">Prototype — page de démonstration, aucun paiement réel.</div>
-<header><div class="wrap"><a class="logo" href="#">Réussir <span>PASS</span></a>
-  <nav><a href="#fonctions">Fonctions</a><a href="#offres">Offres</a><a href="#faq">Questions</a></nav>
-  <a class="btn blue" href="../">Ouvrir l’appli</a></div></header>
+<div class="proto">PROTOTYPE · DÉMONSTRATION · AUCUN PAIEMENT RÉEL</div>
+<header><div class="wrap">
+  <a class="logo" href="#">Réussir <i>PASS</i></a>
+  <nav><a href="#outils">Les outils</a><a href="#methode">La méthode</a><a href="#offres">Les offres</a><a href="#faq">Questions</a></nav>
+  <a class="btn sm" href="../">Ouvrir l’appli</a>
+</div></header>
 
-<main class="wrap">
-  <div class="hero">
-    <span class="tag">PASS · Lyon-Est</span>
-    <h1>Réviser le PASS <em>sans perdre de temps</em></h1>
-    <p>Les annales corrigées en QCM interactifs, des sessions qui font revenir ce qu’on oublie, et des outils visuels pour l’embryologie et l’histologie. Sur iPad, téléphone et ordinateur.</p>
-    <div class="cta"><button class="btn primary" data-plan="essai">Essayer gratuitement 7 jours</button><a class="btn" href="#offres">Voir les offres</a></div>
-    <span class="small">Sans engagement. Votre progression vous suit sur tous vos appareils.</span>
+<main>
+  <div class="wrap hero">
+    <div>
+      <span class="mono">Pour les étudiants en PASS · Lyon-Est</span>
+      <h1>Ce que tu révises, <em>tu le retiens.</em></h1>
+      <p class="lead">Les annales corrigées en QCM, des sessions qui reviennent sur <span class="hl">ce que tu oublies</span>, et l’embryologie enfin en trois dimensions.</p>
+      <div class="cta"><button class="btn ink" data-plan="essai">Essayer 7 jours, gratuit</button><a class="btn" href="#offres">Voir les prix</a></div>
+      <div class="note">Sans carte bancaire pour l’essai · sur iPad, téléphone et ordinateur</div>
+    </div>
+    <div style="position:relative">
+      <div class="tab" aria-hidden="true"><div class="scr">
+        <div class="bar">Session ancrage · UE5 <span>6 / 10 ancrées</span></div>
+        <div class="body">
+          <div class="q-h">Question 4 · 3e semaine</div>
+          <div class="q-s">Concernant la gastrulation, quelle(s) proposition(s) est (sont) exacte(s) ?</div>
+          <div class="it ok"><b>A</b>La ligne primitive apparaît dans l’épiblaste</div>
+          <div class="it"><b>B</b>Le mésoblaste dérive de l’hypoblaste</div>
+          <div class="it ok"><b>C</b>Le nœud de Hensen est à l’extrémité céphalique de la ligne primitive</div>
+          <div class="it ko"><b>D</b>La chorde se met en place à J10</div>
+          <div class="anc"><span>Réussie 2 fois sur 3</span><span class="dots">●●○</span></div>
+        </div>
+      </div></div>
+      <div class="sticky">Encore une bonne réponse et elle est ancrée.</div>
+    </div>
   </div>
 
-  <section id="fonctions">
-    <h2>Tout pour <em>réviser efficacement</em></h2>
-    <div class="grid">
-      <div class="card"><h3>Annales corrigées</h3><p>Chaque épreuve en QCM interactif, comme le jour J : mode examen chronométré ou entraînement, correction item par item, note sur 20.</p></div>
-      <div class="card"><h3>Sessions flash</h3><p>Choisissez un ou plusieurs chapitres et le nombre de questions : un entraînement sur mesure en deux clics.</p></div>
-      <div class="card"><h3>Sessions d’ancrage</h3><p>Les questions de cours qui reviennent le plus, à réussir trois fois chacune pour être sûr de les retenir.</p></div>
-      <div class="card"><h3>Flashcards</h3><p>Vos erreurs deviennent des cartes, révisées au bon moment. Créez aussi les vôtres, importez vos paquets Anki.</p></div>
-      <div class="card"><h3>Embryologie en 3D</h3><p>Les quatre premières semaines jour par jour, coupes transversale et sagittale, et ce qui change d’un jour à l’autre.</p></div>
-      <div class="card"><h3>Coupes d’histologie</h3><p>Reconnaître la coupe, sa localisation et ses caractéristiques, avec les objectifs du cours.</p></div>
-      <div class="card"><h3>Planning</h3><p>Un calendrier de révision avec vos séances, répétées chaque jour ou chaque semaine.</p></div>
-      <div class="card"><h3>Demandes sur mesure</h3><p>Envoyez un cours : on vous en fait des flashcards, des QCM ou une fiche de synthèse.</p></div>
-    </div>
-  </section>
+  <div class="wrap"><div class="facts rv">
+    <div><b>5</b><span>UE couvertes</span></div>
+    <div><b>3 000+</b><span>questions d’annales et de banques</span></div>
+    <div><b>4</b><span>semaines d’embryologie en 3D</span></div>
+    <div><b>120</b><span>coupes d’histologie à reconnaître</span></div>
+  </div></div>
 
-  <section>
-    <h2>Comment ça <em>marche</em></h2>
-    <div class="steps">
-      <div><b>Créez votre compte</b> en une minute : prénom, nom, e-mail.</div>
-      <div><b>Choisissez votre UE</b> et commencez par une session flash ou une annale.</div>
-      <div><b>Revenez chaque jour</b> : flashcards et ancrage vous font revoir ce qui n’est pas encore acquis.</div>
+  <section id="outils"><div class="wrap">
+    <div class="sec-h rv"><span class="mono">01 · Les outils</span><h2>Tout ce qu’il faut, <em>rien de plus.</em></h2></div>
+    <div class="index">
+      <div class="row rv"><span class="n">Annales</span><h3>Le concours, avant le concours</h3><p>Chaque épreuve en QCM interactif, chronométrée comme le jour J ou en entraînement, avec la correction item par item et ta note sur 20.</p></div>
+      <div class="row rv"><span class="n">Sessions flash</span><h3>Tu choisis, on mélange</h3><p>Coche un ou plusieurs chapitres, choisis le nombre de questions : un entraînement sur mesure en deux gestes.</p></div>
+      <div class="row rv"><span class="n">Ancrage</span><h3>Trois fois juste, et c’est acquis</h3><p>Les questions de cours qui tombent le plus, reposées jusqu’à ce que tu les réussisses trois fois chacune.</p></div>
+      <div class="row rv"><span class="n">Flashcards</span><h3>Tes erreurs reviennent au bon moment</h3><p>Chaque question ratée deux fois devient une carte, en répétition espacée. Crée aussi les tiennes, ou importe tes paquets Anki.</p></div>
+      <div class="row rv"><span class="n">Embryologie 3D</span><h3>Voir enfin ce qui se passe</h3><p>Les quatre premières semaines jour par jour, en coupe transversale ou sagittale, avec ce qui apparaît d’un jour à l’autre.</p></div>
+      <div class="row rv"><span class="n">Histologie</span><h3>Reconnaître la coupe</h3><p>La coupe s’affiche, tu dis ce que c’est, où on la trouve et ce qui la caractérise, puis tu compares avec le cours.</p></div>
+      <div class="row rv"><span class="n">Sur mesure</span><h3>Envoie ton cours, reçois des cartes</h3><p>Un PDF et une consigne : flashcards, QCM ou fiche de synthèse arrivent directement dans ton compte.</p></div>
     </div>
-  </section>
+  </div></section>
 
-  <section id="offres">
-    <h2>Les <em>offres</em></h2>
-    <p class="small">Prix de démonstration, à valider.</p>
-    <div class="grid">
-      <div class="card price"><h3>Découverte</h3><div class="amount">0 € <small>pour toujours</small></div>
-        <ul><li>1 annale par UE</li><li>Flashcards de vos erreurs</li><li>Planning</li></ul>
+  <section id="methode"><div class="wrap">
+    <div class="sec-h rv"><span class="mono">02 · La méthode</span><h2>Réviser <em>un peu</em>, mais tous les jours.</h2></div>
+    <div class="method rv">
+      <div><span class="big">i.</span><h3>Teste-toi</h3><p>Une session flash sur les chapitres du jour, pour voir ce qui est su et ce qui ne l’est pas.</p></div>
+      <div><span class="big">ii.</span><h3>Ancre</h3><p>Ce qui bloque passe en ancrage et en flashcards, jusqu’à ce que ça tienne.</p></div>
+      <div><span class="big">iii.</span><h3>Planifie</h3><p>Le planning garde le rythme jusqu’au concours, séance par séance.</p></div>
+    </div>
+  </div></section>
+
+  <section id="offres"><div class="wrap">
+    <div class="sec-h rv"><span class="mono">03 · Les offres</span><h2>Moins cher <em>qu’un manuel.</em></h2></div>
+    <div class="plans rv">
+      <div class="plan"><h3>Découverte</h3><div class="price">0 € <small>toujours</small></div>
+        <ul><li>1 annale par UE</li><li>Flashcards de tes erreurs</li><li>Planning</li></ul>
         <button class="btn" data-plan="gratuit">Créer un compte</button></div>
-      <div class="card price best"><span class="tag">Le plus choisi</span><h3>Mensuel</h3><div class="amount">6,99 € <small>/ mois</small></div>
-        <ul><li>Toutes les annales et sessions</li><li>Ancrage, flash, bêtes noires</li><li>Modèles 3D et coupes</li><li>Sans engagement</li></ul>
-        <button class="btn primary" data-plan="mensuel">Essayer 7 jours</button></div>
-      <div class="card price"><h3>Année PASS</h3><div class="amount">49 € <small>/ an</small></div>
-        <ul><li>Tout le mensuel</li><li>3 demandes sur mesure par mois</li><li>Soit environ 4 € par mois</li></ul>
-        <button class="btn blue" data-plan="annuel">Choisir l’année</button></div>
+      <div class="plan"><h3>Mensuel</h3><div class="price">6,99 € <small>/ mois</small></div>
+        <ul><li>Tout le contenu</li><li>Sessions flash et ancrage</li><li>3D et histologie</li><li>Sans engagement</li></ul>
+        <button class="btn" data-plan="mensuel">Essayer 7 jours</button></div>
+      <div class="plan star"><span class="ribbon">Le plus logique</span><h3>Semestre</h3><div class="price">34 € <small>/ semestre</small></div>
+        <ul><li>Tout le mensuel</li><li>Jusqu’à la fin du concours</li><li>Environ 6 € par mois</li></ul>
+        <button class="btn ink" data-plan="semestre">Choisir le semestre</button></div>
+      <div class="plan"><h3>Année PASS</h3><div class="price">49 € <small>/ an</small></div>
+        <ul><li>Les deux semestres</li><li>3 demandes sur mesure / mois</li><li>Environ 4 € par mois</li></ul>
+        <button class="btn" data-plan="annuel">Choisir l’année</button></div>
     </div>
-  </section>
+    <p class="plans-note">Prix de démonstration. Paiement sécurisé, résiliable à tout moment depuis ton compte.</p>
+  </div></section>
 
-  <section id="faq">
-    <h2>Questions <em>fréquentes</em></h2>
-    <details><summary>Sur quels appareils ?</summary><p>iPad, téléphone et ordinateur, dans le navigateur. On peut l’ajouter à l’écran d’accueil comme une application.</p></details>
-    <details><summary>Ma progression est-elle gardée ?</summary><p>Oui, elle est enregistrée dans votre compte et vous suit d’un appareil à l’autre.</p></details>
-    <details><summary>Puis-je arrêter quand je veux ?</summary><p>Oui, l’abonnement mensuel est sans engagement.</p></details>
-    <details><summary>D’où viennent les questions ?</summary><p>Des annales et banques de QCM, reprises mot pour mot avec leur correction et leur source.</p></details>
-  </section>
+  <section id="faq"><div class="wrap">
+    <div class="sec-h rv"><span class="mono">04 · Questions</span><h2>Ce qu’on <em>nous demande.</em></h2></div>
+    <div class="faq rv">
+      <details><summary>Sur quels appareils ?</summary><p>iPad, téléphone et ordinateur, dans le navigateur. Tu peux l’ajouter à ton écran d’accueil comme une application.</p></details>
+      <details><summary>Ma progression est-elle gardée ?</summary><p>Oui : elle est enregistrée dans ton compte et te suit d’un appareil à l’autre.</p></details>
+      <details><summary>Puis-je arrêter quand je veux ?</summary><p>Oui. Le mensuel est sans engagement ; le semestre et l’année ne se renouvellent pas sans ton accord.</p></details>
+      <details><summary>D’où viennent les questions ?</summary><p>Des annales et banques de QCM, reprises mot pour mot avec leur correction et leur source.</p></details>
+      <details><summary>Et si une correction est fausse ?</summary><p>Tu peux la corriger pour toi en un geste. Quand plusieurs étudiants signalent la même erreur, elle est vérifiée et corrigée pour tout le monde.</p></details>
+    </div>
+  </div></section>
+
+  <div class="wrap end rv">
+    <span class="mono">Prêt ?</span>
+    <h2>Le concours se prépare <em>aujourd’hui.</em></h2>
+    <button class="btn ink" data-plan="essai">Commencer l’essai gratuit</button>
+  </div>
 </main>
-<footer><div class="wrap">Réussir PASS — prototype. Mentions légales, CGV et confidentialité à rédiger avant toute commercialisation.</div></footer>
+<footer><div class="wrap"><span>Réussir PASS · prototype</span><span>Mentions légales · CGV · Confidentialité (à rédiger)</span></div></footer>
 
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="card">
-  <h3 id="mt">Créer un compte</h3><p class="small" id="mp"></p>
-  <label>Prénom<input autocomplete="given-name"></label><label>E-mail<input type="email" autocomplete="email"></label>
-  <button class="btn primary" id="mgo">Continuer</button><button class="btn" id="mx">Fermer</button>
-  <p class="small">Démonstration : aucune donnée n’est envoyée et aucun paiement n’est demandé.</p>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="box">
+  <span class="mono" id="mp"></span>
+  <h3 id="mt">Créer ton compte</h3>
+  <label>Prénom<input autocomplete="given-name"></label>
+  <label>E-mail<input type="email" autocomplete="email"></label>
+  <button class="btn ink" id="mgo">Continuer</button><button class="btn" id="mx">Fermer</button>
+  <span style="font-size:13px;color:var(--soft)">Démonstration : rien n’est envoyé, aucun paiement n’est demandé.</span>
 </div></div>
 <script>
-const P = { essai: 'Essai gratuit de 7 jours, puis 6,99 €/mois.', gratuit: 'Offre Découverte, gratuite.', mensuel: 'Mensuel : 7 jours d’essai, puis 6,99 €/mois, sans engagement.', annuel: 'Année PASS : 49 € pour un an.' };
+const P = { essai: 'Essai gratuit · 7 jours', gratuit: 'Découverte · 0 €', mensuel: 'Mensuel · 6,99 €/mois · 7 jours offerts', semestre: 'Semestre · 34 €', annuel: 'Année PASS · 49 €' };
 const m = document.getElementById('modal');
-document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { document.getElementById('mp').textContent = P[b.dataset.plan]; m.classList.add('open'); });
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
 document.getElementById('mx').onclick = () => m.classList.remove('open');
 m.onclick = e => { if (e.target === m) m.classList.remove('open'); };
-document.getElementById('mgo').onclick = () => { m.querySelector('h3').textContent = 'Merci !'; document.getElementById('mp').textContent = 'Dans la version finale, le paiement sécurisé s’ouvrirait ici.'; };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('open'); });
+document.getElementById('mgo').onclick = () => { document.getElementById('mt').textContent = 'Merci !'; document.getElementById('mp').textContent = 'Ici s’ouvrirait le paiement sécurisé'; };
+const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 }) : null;
+document.querySelectorAll('.rv').forEach(el => io ? io.observe(el) : el.classList.add('in'));
 </script>
 </body>
 </html>
