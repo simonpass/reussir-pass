@@ -166,7 +166,7 @@
   document.addEventListener('compte', () => { admin = null; });
 
   window.Compte = {
-    on: ON, init, open, push, pull, sendDemande, listDemandes, deleteDemande, pushFix, delFix, loadDecisions, isAdmin, allFixes, decide, undecide,
+    on: ON, init, open, signup() { open.mode = 'signup'; open(); }, login() { open.mode = 'login'; open(); }, push, pull, sendDemande, listDemandes, deleteDemande, pushFix, delFix, loadDecisions, isAdmin, allFixes, decide, undecide,
     get user() { return user; }, get profile() { return profile; },
     label() { return user ? (profile && profile.prenom ? profile.prenom + ' ' + (profile.nom || '') : user.email) : 'Se connecter'; }
   };
