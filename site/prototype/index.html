@@ -240,7 +240,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 #m3dDemo .m3d-lvl[hidden] { display: none; }
 #m3dDemo .m3d-lvl input { width: 100%; accent-color: var(--brand); height: 28px; }
 #m3dDemo .btn.ghost { min-height: 38px; padding: 0 14px; font-size: 14px; border-width: 1px; }
-#m3dDemo .m3d-side, #m3dDemo .note-src, #m3dDemo .m3d-info { display: none; }
+#m3dDemo .m3d-side, #m3dDemo .note-src, #m3dDemo .m3d-info, #m3dDemo .m3d-filter, #m3dDemo .m3d-legend, #m3dDemo .m3d-new, #m3dDemo .m3d-tools, #m3dDemo .m3d-lvl { display: none !important; }
 #m3dDemo .m3d-canvas { height: min(58vh, 560px); }
 .tri { display: grid; grid-template-columns: 1fr 1.7fr; gap: 28px; align-items: start; }
 .tri > div:first-child p { color: var(--soft); }
@@ -405,8 +405,8 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   <section id="demo3d"><div class="wrap">
     <div class="sec-h rv"><span class="mono" data-n="06">Essaie la 3D</span><h2>Touche, tourne, <em>coupe.</em></h2></div>
     <div class="tri rv">
-      <div><p>Voici la 3e semaine de développement, telle qu’elle est dans l’appli. Fais tourner l’embryon, passe d’un jour à l’autre, isole le tube neural ou le mésoblaste, et ouvre une coupe.</p>
-        <ul><li>Un doigt pour tourner, deux pour zoomer</li><li>Les jours en bas, les parties en haut</li><li>« Coupe transversale » ouvre l’embryon</li></ul>
+      <div><p>Voici la 3e semaine de développement, telle qu’elle est dans l’appli. Fais tourner l’embryon et passe d’un jour à l’autre. Dans l’appli, tu peux aussi isoler des structures, faire des coupes et lire le cours.</p>
+        <ul><li>Un doigt pour tourner, deux pour zoomer</li><li>Les jours juste en dessous</li><li>Touche une structure pour voir son nom</li></ul>
         <p style="margin-top:16px"><a class="btn" href="../">Voir les 5 modèles dans l’appli</a></p></div>
       <div id="m3dDemo"><div class="m3d-load" style="min-height:300px;display:grid;place-items:center;color:var(--soft)">Chargement du modèle 3D…</div></div>
     </div>
