@@ -1673,7 +1673,7 @@ function navOpen() {
     <nav>${NAV.map(([k, t, s, ic]) => `<button data-nav="${k}" class="${k === view ? 'on' : ''}" aria-current="${k === view ? 'page' : 'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic}</svg><span>${esc(t)}<small>${esc(s)}</small></span>${k === 'fc' && due ? `<i class="badge">${due}</i>` : ''}</button>`).join('')}</nav>
     ${window.TK_ADMIN && window.Compte && window.Compte.user ? `<button class="drawer-acc" data-nav="tickets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"/><path d="M10 7v12" stroke-dasharray="2 2"/></svg><span>Tickets de correction<small>Valider les réponses corrigées par plusieurs élèves</small></span></button>` : ''}
     ${window.Compte && window.Compte.on ? `<button class="drawer-acc" data-nav="compte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>${esc(window.Compte.label())}<small>${window.Compte.user ? 'Progression synchronisée' : 'Créer un compte ou se connecter'}</small></span></button>` : ''}
-    <div class="drawer-foot">reussir-pass.fr</div></div>`;
+    <div class="drawer-foot"><a href="prototype/" style="color:inherit">Découvrir les offres</a> · reussir-pass.fr</div></div>`;
   drawer.querySelector('.drawer-scrim').onclick = navClose;
   drawer.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { const v = b.dataset.nav; navClose(); if (v === 'compte') { if (window.Compte) window.Compte.open(); return; } if (v === 'tickets') { ticketsOpen(); return; } if (v !== view) { view = v; store.set('view', view); } home(); });
   drawer.removeAttribute('aria-hidden'); $('#navBtn').setAttribute('aria-expanded', 'true');
@@ -2703,7 +2703,7 @@ window.UE4 = {
   setTitle(t) { $('#barTitle').textContent = t; $('#homeBtn').hidden = false; $('#menuBtn').hidden = true; S = null; stopTimer(); }
 };
 home();
-if (window.UE4Import) Promise.resolve(window.UE4Import.init()).then(receiveTransfer).then(() => window.Compte && window.Compte.init());
+if (window.UE4Import) Promise.resolve(window.UE4Import.init()).then(receiveTransfer).then(() => window.Compte && window.Compte.init()).then(() => { try { const q = new URLSearchParams(location.search); const m = q.get('compte'); if ((m === 'signup' || m === 'login') && window.Compte && window.Compte.on) { history.replaceState(null, '', location.pathname); if (!window.Compte.user) window.Compte[m](); } } catch (e) {} });
 })();
 </script>
 

@@ -30,6 +30,7 @@ a { color: inherit; }
 header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule); }
 header .wrap { display: flex; align-items: center; gap: 20px; min-height: 64px; }
 .logo { font-family: var(--serif); font-weight: 800; font-size: 22px; text-decoration: none; letter-spacing: -.02em; margin-right: auto; display: flex; align-items: baseline; gap: 6px; }
+.login { font-size: 15px; font-weight: 600; text-decoration: none; margin-right: -4px; } .login:hover { text-decoration: underline; }
 .logo i { font-weight: 400; color: var(--red); }
 nav a { text-decoration: none; font-size: 15px; color: var(--soft); margin-left: 18px; }
 nav a:hover { color: var(--ink); }
@@ -174,6 +175,87 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .btn.ink:hover::after { opacity: 1; }
 .row.rv { transform: translateX(-24px); }
 .plans.rv .plan { opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; } .plans.rv.in .plan { opacity: 1; transform: none; } .plans.rv.in .plan:nth-child(2) { transition-delay: .1s; } .plans.rv.in .plan:nth-child(3) { transition-delay: .2s; } .plans.rv.in .plan:nth-child(4) { transition-delay: .3s; }
+/* visualiseur 3D intégré */
+#m3dDemo { --surface: var(--card); --surface-2: var(--paper); --line: var(--rule); --brand: var(--blue); --muted: var(--soft); --fg: var(--ink); --action: var(--red); --brand-soft: color-mix(in srgb, var(--blue) 8%, var(--card)); --bad: var(--red); --shadow: none; --ease-out: cubic-bezier(.22,1,.36,1); }
+#m3dDemo .btn.ghost { background: var(--surface); color: var(--fg); border: 1px solid var(--line); }
+#m3dDemo .m3dcard { min-height: 120px; }
+#m3dDemo .m3dwrap { max-width: 1100px; margin: 0 auto; padding-block: 14px 60px; }
+#m3dDemo .m3d { display: grid; gap: 12px; }
+#m3dDemo .m3d-stage { position: relative; }
+#m3dDemo .m3d-canvas { height: min(62vh, 620px); min-height: 320px; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at 50% 35%, var(--surface), var(--surface-2)); box-shadow: var(--shadow); touch-action: none; }
+#m3dDemo .m3d-canvas canvas { display: block; width: 100% !important; height: 100% !important; }
+#m3dDemo .m3d-load { display: grid; place-items: center; height: 100%; color: var(--muted); }
+#m3dDemo .m3d-tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+#m3dDemo .m3d-tools .btn { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); }
+#m3dDemo .m3d-tools .btn.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+#m3dDemo .m3d-days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+#m3dDemo .m3d-days button { flex: 0 0 auto; scroll-snap-align: start; display: grid; gap: 1px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; min-height: 52px; min-width: 120px; }
+#m3dDemo .m3d-days button b { font-size: 16px; } .m3d-days button span { font-size: 12.5px; color: var(--muted); }
+#m3dDemo .m3d-days button.on { background: var(--brand); border-color: var(--brand); color: #fff; } .m3d-days button.on span { color: #fff; opacity: .9; }
+#m3dDemo .m3d-info { background: var(--brand-soft, var(--surface)); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px; min-height: 70px; }
+#m3dDemo .m3d-info b { font-size: 16.5px; } .m3d-info span { color: var(--fg); white-space: pre-wrap; }
+#m3dDemo .m3d-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+#m3dDemo .m3d-legend button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; min-height: 38px; font-size: 14px; }
+#m3dDemo .m3d-legend button i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+#m3dDemo .m3d-legend button.on { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand) inset; }
+#m3dDemo .m3d-facts, #m3dDemo .m3d-traps { margin-top: 8px; display: grid; gap: 4px; }
+#m3dDemo .m3d-facts h5, #m3dDemo .m3d-traps h5, #m3dDemo .m3d-side h4 { margin: 4px 0 2px; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+#m3dDemo .m3d-traps h5 { color: var(--bad); }
+#m3dDemo .m3d-facts ul, #m3dDemo .m3d-traps ul, #m3dDemo .m3d-ann ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+#m3dDemo .m3d-facts li small, #m3dDemo .m3d-traps li small, #m3dDemo .m3d-ann li small, #m3dDemo .m3d-figs figcaption small { display: block; color: var(--muted); font-size: 12px; }
+#m3dDemo .m3d-traps s { color: var(--muted); }
+#m3dDemo .m3d-side { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+#m3dDemo .m3d-side section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; }
+#m3dDemo .m3d-figs figure { margin: 0; display: grid; gap: 4px; }
+#m3dDemo .m3d-figs img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
+#m3dDemo .m3d-figs figcaption { font-size: 14px; }
+#m3dDemo .m3d-ann li { font-size: 14.5px; }
+#m3dDemo .m3d-zoom { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0, #m3dDemo .85); display: grid; place-items: center; padding: 16px; overflow: auto; }
+#m3dDemo .m3d-zoom img { max-width: 100%; max-height: 100%; background: #fff; border-radius: 8px; }
+#m3dDemo .m3d-load { gap: 12px; align-content: center; justify-items: center; text-align: center; font-size: 15px; }
+#m3dDemo .m3d-load::before { content: ''; width: 48px; height: 48px; border-radius: 50%; border: 4px solid color-mix(in srgb, var(--brand) 18%, transparent); border-top-color: var(--brand); border-right-color: var(--action); animation: spin .9s linear infinite; }
+#m3dDemo .m3d-load.err::before { display: none; }
+#m3dDemo .m3d-zoom { animation: fadeIn .2s ease-out both; } .m3d-zoom img { animation: popIn .35s var(--ease-out) both; }
+#m3dDemo .m3d-info { transition: background-color .25s; }
+#m3dDemo .m3d-new { display: flex; flex-wrap: wrap; gap: 2px 4px; align-items: center; font-size: 13px; line-height: 1.3; color: var(--muted); padding: 0 2px; border-radius: 8px; }
+#m3dDemo .m3d-new:empty { display: none; }
+#m3dDemo .m3d-new b { font-weight: 600; color: var(--fg); margin-right: 4px; }
+#m3dDemo .m3d-new.flash { animation: newFlash 1.2s ease-out; }
+#m3dDemo .m3d-chip { border: 0; border-radius: 99px; padding: 2px 8px; min-height: 28px; font-size: 13px; background: none; color: var(--fg); }
+#m3dDemo .m3d-chip.plus { color: var(--action); font-weight: 600; background: color-mix(in srgb, var(--action) 9%, transparent); }
+#m3dDemo .m3d-chip.moins { text-decoration: line-through; color: var(--muted); cursor: default; }
+#m3dDemo .m3d-filter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+#m3dDemo .m3d-filter .m3d-fl { font-size: 13px; font-weight: 600; color: var(--muted); margin-right: 2px; }
+#m3dDemo .m3d-filter button { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 12px; min-height: 38px; font-size: 14px; font-weight: 600; color: var(--fg); }
+#m3dDemo .m3d-filter button.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+#m3dDemo .m3d-ghost { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--muted); margin-left: 6px; } .m3d-ghost input { width: 18px; height: 18px; }
+#m3dDemo .m3d-li { display: inline-flex; align-items: stretch; }
+#m3dDemo .m3d-li .m3d-eye { width: 34px; min-height: 38px; border: 1px solid var(--line); border-right: 0; border-radius: 99px 0 0 99px; background: var(--surface); color: var(--brand); font-weight: 700; }
+#m3dDemo .m3d-li .m3d-eye[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+#m3dDemo .m3d-li > button[data-p] { border-radius: 0 99px 99px 0; }
+#m3dDemo .m3d-li.off > button[data-p] { opacity: .45; }
+#m3dDemo .m3d-li.new > button[data-p] { border-color: color-mix(in srgb, var(--action) 60%, var(--line)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action) 40%, transparent); }
+#m3dDemo .m3d-cutseg { display: inline-flex; gap: 0; } .m3d-cutseg .btn { border-radius: 0; } .m3d-cutseg .btn:first-child { border-radius: 6px 0 0 6px; } .m3d-cutseg .btn:last-child { border-radius: 0 6px 6px 0; }
+#m3dDemo .m3d-lvl { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; gap: 4px; padding: 8px 12px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--muted); }
+#m3dDemo .m3d-lvl[hidden] { display: none; }
+#m3dDemo .m3d-lvl input { width: 100%; accent-color: var(--brand); height: 28px; }
+#m3dDemo .btn.ghost { min-height: 38px; padding: 0 14px; font-size: 14px; border-width: 1px; }
+#m3dDemo .m3d-side, #m3dDemo .note-src, #m3dDemo .m3d-info { display: none; }
+#m3dDemo .m3d-canvas { height: min(58vh, 560px); }
+.tri { display: grid; grid-template-columns: 1fr 1.7fr; gap: 28px; align-items: start; }
+.tri > div:first-child p { color: var(--soft); }
+.tri ul { padding-left: 18px; color: var(--soft); display: grid; gap: 6px; margin: 12px 0 0; }
+@media (max-width: 920px) { .tri { grid-template-columns: 1fr; } }
+/* tout ce qui est inclus */
+.all { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--ink); border-radius: 18px; overflow: hidden; background: var(--card); }
+.all > div { padding: 24px 22px 26px; border-left: 1px solid var(--rule); border-top: 1px solid var(--rule); }
+.all > div:nth-child(-n+3) { border-top: 0; } .all > div:nth-child(3n+1) { border-left: 0; }
+.all h3 { font-family: var(--serif); font-size: 21px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; }
+.all h3 span { font-family: var(--mono); font-size: 11.5px; color: var(--soft); font-weight: 400; }
+.all ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 7px; font-size: 15px; color: var(--soft); }
+.all li::before { content: "✓ "; color: var(--green); font-weight: 700; }
+@media (max-width: 920px) { .all { grid-template-columns: 1fr 1fr; } .all > div:nth-child(n) { border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); } .all > div:nth-child(2n+1) { border-left: 0; } .all > div:nth-child(-n+2) { border-top: 0; } }
+@media (max-width: 560px) { .all { grid-template-columns: 1fr; } .all > div:nth-child(n) { border-left: 0; border-top: 1px solid var(--rule); } .all > div:first-child { border-top: 0; } }
 /* apparition au défilement */
 .rv { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
 .rv.in { opacity: 1; transform: none; }
@@ -222,8 +304,8 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 <div class="proto">PROTOTYPE · DÉMONSTRATION · AUCUN PAIEMENT RÉEL</div>
 <header><div class="wrap">
   <a class="logo" href="#">Réussir <i>PASS</i></a>
-  <nav><a href="#appli">L’appli</a><a href="#outils">Les outils</a><a href="#methode">La méthode</a><a href="#essai">Essayer</a><a href="#offres">Les offres</a><a href="#faq">Questions</a></nav>
-  <a class="btn sm" href="../">Ouvrir l’appli</a>
+  <nav><a href="#appli">L’appli</a><a href="#outils">Les outils</a><a href="#tout">Tout inclus</a><a href="#demo3d">3D</a><a href="#methode">La méthode</a><a href="#essai">Essayer</a><a href="#offres">Les offres</a><a href="#faq">Questions</a></nav>
+  <a class="login" href="../?compte=login">Se connecter</a><a class="btn sm" href="../?compte=signup">Créer un compte</a>
 </div></header>
 
 <main>
@@ -305,8 +387,33 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     </div>
   </div></section>
 
+  <section id="tout"><div class="wrap">
+    <div class="sec-h rv"><span class="mono" data-n="05">Tout ce qui est inclus</span><h2>Une seule appli, <em>tout le programme.</em></h2></div>
+    <div class="all">
+      <div class="rv"><h3>S’entraîner <span>QCM</span></h3><ul><li>Annales corrigées, mode examen chronométré ou entraînement</li><li>Correction item par item et note sur 20</li><li>Questions par matière et par chapitre</li><li>Banques de QCM du tutorat</li><li>Exercices types</li><li>Compétences par UE et progression</li></ul></div>
+      <div class="rv"><h3>Sessions sur mesure <span>Flash</span></h3><ul><li>Session flash : tu choisis chapitres et nombre de questions</li><li>Flash tutorat sur les banques</li><li>Mélange plusieurs cours en une seule session</li><li>Mode examen ou entraînement</li></ul></div>
+      <div class="rv"><h3>Ancrage <span>Mémoire</span></h3><ul><li>Questions de cours qui reviennent le plus</li><li>Chaque question à réussir 3 fois</li><li>Ancrage tutorat</li><li>Mes bêtes noires : ce qui résiste encore</li><li>Reprise là où tu t’es arrêté</li></ul></div>
+      <div class="rv"><h3>Flashcards <span>Révision espacée</span></h3><ul><li>Tes questions ratées deviennent des cartes</li><li>Répétition espacée : à revoir, difficile, moyen, facile</li><li>Crée tes propres paquets recto / verso</li><li>Import et export Anki</li><li>Photos sur les cartes</li></ul></div>
+      <div class="rv"><h3>Embryologie 3D <span>Interactif</span></h3><ul><li>4 semaines de développement, jour par jour</li><li>Appareil cardio-vasculaire en 3D</li><li>Coupes transversale et sagittale</li><li>Affiche seulement les parties qui t’intéressent</li><li>Ce qui apparaît ou disparaît d’un jour à l’autre</li><li>Frise chronologique et schémas du cours</li></ul></div>
+      <div class="rv"><h3>Histologie <span>Coupes</span></h3><ul><li>120 coupes tirées des cours</li><li>Nom, localisation et caractéristiques</li><li>Objectifs du cours par chapitre</li><li>Revoir les coupes ratées</li></ul></div>
+      <div class="rv"><h3>Organisation <span>Planning</span></h3><ul><li>Calendrier de révision et séances répétées</li><li>Tableau de bord « Aujourd’hui »</li><li>Séances qui ouvrent directement la bonne rubrique</li></ul></div>
+      <div class="rv"><h3>Sur mesure <span>Tes cours</span></h3><ul><li>Envoie un PDF : flashcards, QCM ou fiche de synthèse</li><li>Importe tes propres documents</li><li>Ajuste les énoncés et réponses à ta façon</li><li>Tes réglages restent personnels</li></ul></div>
+      <div class="rv"><h3>Partout <span>Compte</span></h3><ul><li>iPad, téléphone et ordinateur</li><li>Progression synchronisée entre tes appareils</li><li>Thème clair et sombre</li><li>Installable sur l’écran d’accueil</li></ul></div>
+    </div>
+  </div></section>
+
+  <section id="demo3d"><div class="wrap">
+    <div class="sec-h rv"><span class="mono" data-n="06">Essaie la 3D</span><h2>Touche, tourne, <em>coupe.</em></h2></div>
+    <div class="tri rv">
+      <div><p>Voici la 3e semaine de développement, telle qu’elle est dans l’appli. Fais tourner l’embryon, passe d’un jour à l’autre, isole le tube neural ou le mésoblaste, et ouvre une coupe.</p>
+        <ul><li>Un doigt pour tourner, deux pour zoomer</li><li>Les jours en bas, les parties en haut</li><li>« Coupe transversale » ouvre l’embryon</li></ul>
+        <p style="margin-top:16px"><a class="btn" href="../">Voir les 5 modèles dans l’appli</a></p></div>
+      <div id="m3dDemo"><div class="m3d-load" style="min-height:300px;display:grid;place-items:center;color:var(--soft)">Chargement du modèle 3D…</div></div>
+    </div>
+  </div></section>
+
   <section id="offres"><div class="wrap">
-    <div class="sec-h rv"><span class="mono" data-n="05">Les offres</span><h2>Moins cher <em>qu’un manuel.</em></h2></div>
+    <div class="sec-h rv"><span class="mono" data-n="07">Les offres</span><h2>Moins cher <em>qu’un manuel.</em></h2></div>
     <div class="plans rv">
       <div class="plan"><h3>Découverte</h3><div class="price">0 € <small>toujours</small></div>
         <ul><li>1 annale par UE</li><li>Flashcards de tes erreurs</li><li>Planning</li></ul>
@@ -325,7 +432,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   </div></section>
 
   <section id="faq"><div class="wrap">
-    <div class="sec-h rv"><span class="mono" data-n="06">Questions</span><h2>Ce qu’on <em>nous demande.</em></h2></div>
+    <div class="sec-h rv"><span class="mono" data-n="08">Questions</span><h2>Ce qu’on <em>nous demande.</em></h2></div>
     <div class="faq rv">
       <details><summary>Sur quels appareils ?</summary><p>iPad, téléphone et ordinateur, dans le navigateur. Tu peux l’ajouter à ton écran d’accueil comme une application.</p></details>
       <details><summary>Ma progression est-elle gardée ?</summary><p>Oui : elle est enregistrée dans ton compte et te suit d’un appareil à l’autre.</p></details>
@@ -353,7 +460,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 <script>
 const P = { essai: 'Essai gratuit · 7 jours', gratuit: 'Découverte · 0 €', mensuel: 'Mensuel · 6,99 €/mois · 7 jours offerts', semestre: 'Semestre · 34 €', annuel: 'Année PASS · 49 €' };
 const m = document.getElementById('modal');
-document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { if (['mensuel','semestre','annuel','essai'].includes(b.dataset.plan)) { location.href = 'paiement.html?plan=' + (b.dataset.plan === 'essai' ? 'mensuel' : b.dataset.plan); return; } document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { if (b.dataset.plan === 'gratuit') { location.href = '../?compte=signup'; return; } if (['mensuel','semestre','annuel','essai'].includes(b.dataset.plan)) { location.href = 'paiement.html?plan=' + (b.dataset.plan === 'essai' ? 'mensuel' : b.dataset.plan); return; } document.getElementById('mp').textContent = P[b.dataset.plan]; document.getElementById('mt').textContent = 'Créer ton compte'; m.classList.add('open'); });
 document.getElementById('mx').onclick = () => m.classList.remove('open');
 m.onclick = e => { if (e.target === m) m.classList.remove('open'); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('open'); });
@@ -364,6 +471,9 @@ if (dots && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
 }
 const count = el => { const t = el.textContent, num = parseInt(t.replace(/\D/g, ''), 10), plus = t.includes('+'); if (!num) return; const t0 = performance.now(), d = 1400; const step = now => { const k = Math.min(1, (now - t0) / d), v = Math.round(num * (1 - Math.pow(1 - k, 3))); el.textContent = v.toLocaleString('fr-FR') + (plus ? '+' : ''); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); };
 document.querySelectorAll('.btn.ink').forEach(b => b.addEventListener('pointermove', e => { const r = b.getBoundingClientRect(); b.style.setProperty('--x', (e.clientX - r.left) + 'px'); b.style.setProperty('--y', (e.clientY - r.top) + 'px'); }));
+let m3dLoaded = false;
+const loadM3D = () => { if (m3dLoaded) return; m3dLoaded = true; const sc = document.createElement('script'); sc.src = '../model3d.js'; sc.onload = () => { const host = document.getElementById('m3dDemo'); host.innerHTML = ''; if (window.Model3D) window.Model3D.open(host, 2, { esc: t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])), stage: 3 }); }; sc.onerror = () => { document.getElementById('m3dDemo').textContent = 'Le modèle 3D est disponible dans l’appli.'; }; document.body.appendChild(sc); };
+const dio = 'IntersectionObserver' in window ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { loadM3D(); dio.disconnect(); } }, { rootMargin: '300px' }) : null; if (dio) dio.observe(document.getElementById('demo3d')); else loadM3D(); window.addEventListener('load', () => setTimeout(loadM3D, 3500));
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); if (e.target.classList.contains('facts')) e.target.querySelectorAll('b').forEach(count); io.unobserve(e.target); } }), { threshold: .12 }) : null;
 document.querySelectorAll('.rv').forEach(el => io ? io.observe(el) : el.classList.add('in'));
 
