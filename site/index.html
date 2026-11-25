@@ -825,6 +825,9 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .fixtx { width: 100%; font: inherit; font-size: 15px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; }
 .fixmine { color: var(--mid); font-size: 12.5px; }
 /* mes flashcards */
+.stemfix { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; margin: -2px 0 6px; }
+.stemfix .fixbtn { font-size: 12.5px; }
+.stem .fixtx { width: 100%; font: inherit; }
 .fcimg { display: block; max-width: 100%; max-height: 55vh; margin: 10px auto 0; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
 .addcard { border-style: dashed; background: transparent; cursor: pointer; }
 .card-row { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
@@ -918,13 +921,15 @@ function rebuild() { DATA = BASE.concat(IMPORTS); byId = Object.fromEntries(DATA
 /* + corrections validées par l'administrateur (pour tous) : la correction perso passe avant */
 const fixGlobal = () => { try { return JSON.parse(localStorage.getItem('pass-fixg') || '{}'); } catch (e) { return {}; } };
 function applyFixes() {
-  const F = store.get('fix', {}), G = fixGlobal();
+  const F = store.get('fix', {}), G = fixGlobal(), SF = store.get('stemfix', {});
   DATA.forEach(e => (e.questions || []).forEach(q => {
     const f = F[q._k], g = G[q._k], a = f && Array.isArray(f.a) ? f.a : g && g.statut === 'validée' && Array.isArray(g.answer) ? g.answer : null;
     if (q.answer0) { q.answer = q.answer0; delete q.answer0; }
     delete q.fixSrc; delete q.ctext;
     if (a && (a.slice().sort().join('') !== (q.answer || []).slice().sort().join('') || (f && f.c))) { q.answer0 = (q.answer || []).slice(); q.answer = a.slice(); q.fixSrc = f && Array.isArray(f.a) ? 'perso' : 'global'; }
     if (f && f.c) q.ctext = f.c;
+    if (q.stem0 != null) { q.stem = q.stem0; delete q.stem0; }
+    if (SF[q._k] != null) { q.stem0 = q.stem; q.stem = SF[q._k]; }
   }));
 }
 async function refreshDecisions() {
@@ -1469,7 +1474,7 @@ function anRender() {
       <div class="qb">
         <div class="note-src">${esc(byId[it.e].title)} · ${q.section ? esc(q.section) + ' · ' : ''}Q${q.num ?? it.k + 1}</div>
         ${q.context ? `<div class="ctx">${esc(q.context)}</div>` : ''}
-        <div class="stem">${esc(q.stem)}</div>
+        ${stemHtml(q, it.e + '#' + it.k)}
         ${figHtml(q.figures)}
         <div class="items ${res ? 'locked' : ''}" role="${multi ? 'group' : 'radiogroup'}">${q.items.map(x => { const on = sel.includes(x.letter); return `<label class="item ${on ? 'on' : ''}" data-l="${esc(x.letter)}">
           <input type="${multi ? 'checkbox' : 'radio'}" name="anq" ${on ? 'checked' : ''} ${res ? 'disabled' : ''} aria-label="Item ${esc(x.letter)}">
@@ -2293,7 +2298,7 @@ function cardHtml(i) {
       ${src ? `<div class="note-src">${esc(src)}</div>` : ''}
       ${q.status === 'annulée' ? '<div class="annul">Question annulée dans l’annale</div>' : ''}
       ${q.context ? `<div class="ctx">${esc(q.context)}</div>` : ''}
-      <div class="stem">${esc(q.stem)}</div>
+      ${stemHtml(q, q._k)}
       ${figHtml(q.figures)}
       ${q.items && q.items.length ? `
         ${locked ? '' : '<button class="clear" data-clear>Effacer les réponses</button>'}
@@ -2455,6 +2460,20 @@ async function ticketsOpen() {
   app.querySelectorAll('[data-tkundo]').forEach(b => b.onclick = async () => { if (!confirm('Annuler cette correction pour tous les comptes ?')) return; try { await window.Compte.undecide(b.dataset.tkundo); after('Correction annulée.'); } catch (e) { toast('Échec : ' + (e.message || e)); } });
   window.scrollTo(0, 0);
 }
+/* ---------- modification de l'énoncé par l'élève (personnelle) ---------- */
+const stemHtml = (q, key) => `<div class="stem">${esc(q.stem)}</div><div class="stemfix">${q.stem0 != null ? '<span class="fixnote">Énoncé modifié par vous</span>' : ''}<button class="fixbtn" data-sfix="${esc(key || '')}">✎ Modifier l’énoncé</button></div>`;
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-sfix]'); if (!b || !b.dataset.sfix) return;
+  e.preventDefault(); e.stopPropagation();
+  const key = b.dataset.sfix, i = key.lastIndexOf('#'), q = findQ(key.slice(0, i), +key.slice(i + 1)); if (!q) return;
+  const row = b.closest('.stemfix'), st = row.previousElementSibling, orig = q.stem0 != null ? q.stem0 : q.stem;
+  st.innerHTML = `<textarea class="fixtx" rows="4" aria-label="Énoncé">${esc(q.stem)}</textarea>`;
+  row.innerHTML = `<span class="fixnote">Complétez ou corrigez l’énoncé (ex. le sujet oublié), puis enregistrez. Visible seulement par vous.</span><button class="btn blue" data-sfsave>Enregistrer</button>${q.stem0 != null ? '<button class="btn" data-sfreset>Rétablir l’original</button>' : ''}<button class="btn" data-sfcancel>Annuler</button>`;
+  const done = SF => { store.set('stemfix', SF); applyFixes(); const y = window.scrollY; if (S && S.qs && document.querySelector('.scorehead')) renderCorrection(S); else if (S) renderExam(); else if (AN && view === 'ses') anRender(); window.scrollTo(0, y); };
+  row.querySelector('[data-sfsave]').onclick = () => { const SF = store.get('stemfix', {}), v = st.querySelector('textarea').value.trim(); if (!v || v === String(orig).trim()) delete SF[key]; else SF[key] = v; done(SF); toast(SF[key] ? 'Énoncé enregistré pour vous.' : 'Énoncé d’origine conservé.'); };
+  const rs = row.querySelector('[data-sfreset]'); if (rs) rs.onclick = () => { const SF = store.get('stemfix', {}); delete SF[key]; done(SF); toast('Énoncé d’origine rétabli.'); };
+  row.querySelector('[data-sfcancel]').onclick = () => done(store.get('stemfix', {}));
+}, true);
 /* ---------- correction de la réponse attendue par l'élève ---------- */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-fix]'); if (!b || !b.dataset.fix) return;

@@ -1,6 +1,6 @@
 # Reprise du projet (passage de relais entre sessions Claude)
 
-À lire en premier, avec `CLAUDE.md`. État au 24/11/2026.
+À lire en premier, avec `CLAUDE.md`. État au 25/11/2026 (aucune PR ouverte).
 
 ## Le projet
 - Site de révision PASS (Lyon-Est) pour Christophe Pierre, ami de Simon Guerra (propriétaire).
@@ -27,7 +27,7 @@
 3. Netlify : Christophe a emporté sa progression ; le site Netlify redirige (301) vers reussir-pass.fr depuis le 18/11 (issue #2 fermée).
 4. En attente :
    - jeu « reconnaître la coupe » en histologie (issue #3), qui attend les cours d'histologie de Christophe ;
-   - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`). Au 23/11 : aucune réponse ; l’adresse univ-lyon1 a renvoyé un message anti-spam (CAPTCHA) que **Simon doit valider lui-même** dans Gmail, sinon le mail n’est pas transmis. La copie à tutoratpaceslyonest@gmail.com est partie normalement.
+   - mail au Tutorat Lyon-Est envoyé le 18/11 depuis simon.guerra69@gmail.com (texte dans `mail-tutorat.md`). Au 23/11 : aucune réponse ; l’adresse univ-lyon1 a renvoyé un message anti-spam (CAPTCHA), **validé par Simon le 24/11** : le mail est maintenant délivré, attendre la réponse. La copie à tutoratpaceslyonest@gmail.com est partie normalement.
    - idées d'abonnement payant et d'application mobile.
 
 ## Comptes (Supabase, projet « pass-facile », réf. uwliytqqfbgxvnnqaadl, organisation pass-facile du compte Supabase de Simon)
