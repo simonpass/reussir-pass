@@ -334,6 +334,7 @@ td.dis-no { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
 }
 :root[data-ue="UE1"] { --brand: #0e7a70; }
 :root[data-ue="UE2"] { --brand: #6a35d6; }
+:root[data-ue="UE3"] { --brand: #b8860b; }
 :root[data-ue="UE4"] { --brand: #2457c5; }
 :root[data-ue="UE5"] { --brand: #c0266b; }
 :root[data-ue="UE6"] { --brand: #b3560c; }
@@ -364,7 +365,7 @@ body::before { background: var(--brand-2); }
 .home { gap: 26px; padding-block: 24px 70px; }
 .uepick { gap: 12px; margin: 0; }
 .uepick button { --c: #2457c5; border-radius: var(--radius); padding: 14px 16px; min-height: 78px; gap: 4px; border: 1px solid var(--line); box-shadow: var(--shadow); position: relative; overflow: hidden; transition: transform .15s ease, box-shadow .15s ease, background .2s; }
-.uepick button[data-ue="UE1"] { --c: #0e7a70; } .uepick button[data-ue="UE2"] { --c: #6a35d6; } .uepick button[data-ue="UE4"] { --c: #2457c5; } .uepick button[data-ue="UE5"] { --c: #c0266b; } .uepick button[data-ue="UE6"] { --c: #b3560c; }
+.uepick button[data-ue="UE1"] { --c: #0e7a70; } .uepick button[data-ue="UE2"] { --c: #6a35d6; } .uepick button[data-ue="UE3"] { --c: #b8860b; } .uepick button[data-ue="UE4"] { --c: #2457c5; } .uepick button[data-ue="UE5"] { --c: #c0266b; } .uepick button[data-ue="UE6"] { --c: #b3560c; }
 .uepick button .dot { position: absolute; top: 14px; right: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent); }
 .uepick button b { font-size: 22px; font-weight: 800; color: var(--c); }
 .uepick button.on { background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 72%, #000)); border-color: transparent; color: #fff; box-shadow: 0 10px 24px color-mix(in srgb, var(--c) 35%, transparent); }
@@ -699,7 +700,7 @@ details[open] > :not(summary) { animation: slidein .28s var(--ease-out) both; }
   --shadow: 0 1px 0 rgba(34, 37, 42, .04);
   --shadow-up: 0 2px 8px rgba(34, 37, 42, .07);
 }
-:root[data-ue="UE1"] { --brand: #2f6f62; } :root[data-ue="UE2"] { --brand: #6b4f8a; } :root[data-ue="UE4"] { --brand: #2c5d8a; }
+:root[data-ue="UE1"] { --brand: #2f6f62; } :root[data-ue="UE2"] { --brand: #6b4f8a; } :root[data-ue="UE3"] { --brand: #8a6a1f; } :root[data-ue="UE4"] { --brand: #2c5d8a; }
 :root[data-ue="UE5"] { --brand: #9c3d4f; } :root[data-ue="UE6"] { --brand: #a35a1f; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -743,7 +744,7 @@ body::before, .topbar { background: color-mix(in srgb, var(--brand) 82%, #111); 
 .uepick button b { font-weight: 700; }
 .uepick button.on { background: var(--c); border-color: var(--c); box-shadow: none; }
 .uepick button.on .dot { box-shadow: none; }
-.uepick button[data-ue="UE1"] { --c: #2f6f62; } .uepick button[data-ue="UE2"] { --c: #6b4f8a; } .uepick button[data-ue="UE4"] { --c: #2c5d8a; } .uepick button[data-ue="UE5"] { --c: #9c3d4f; } .uepick button[data-ue="UE6"] { --c: #a35a1f; }
+.uepick button[data-ue="UE1"] { --c: #2f6f62; } .uepick button[data-ue="UE2"] { --c: #6b4f8a; } .uepick button[data-ue="UE3"] { --c: #8a6a1f; } .uepick button[data-ue="UE4"] { --c: #2c5d8a; } .uepick button[data-ue="UE5"] { --c: #9c3d4f; } .uepick button[data-ue="UE6"] { --c: #a35a1f; }
 .seg { border-radius: 8px; box-shadow: none; } .seg button { border-radius: 6px; } .seg button.on { box-shadow: none; }
 .random { border-style: solid; background: var(--surface); }
 .kpis b, .matcard .mh b { font-family: var(--serif); font-weight: 600; color: var(--fg); }
@@ -1247,6 +1248,7 @@ function sesHome() {
   if (SES.tab === 'noires' && !anStrict()) SES.tab = 'ancrage';
   if (SES.tab === 'noires') return noiresHome();
   if (SES.tab === 'tuto' || SES.tab === 'tutoF') return tutoHome(SES.tab === 'tutoF');
+  if (SES.tab === 'exos') return exosHome();
   const flash = SES.tab === 'flash', mats = sesChapters(), sel = new Set(sesSelGet());
   const refs = sesRefs(), avail = flash ? refs.length : sesCours(refs).length;
   const N = store.get(flash ? 'sesNF' : 'sesNA', flash ? 20 : 10);
@@ -1291,8 +1293,48 @@ function sesHome() {
   };
   window.scrollTo(0, 0);
 }
-const sesTabs = () => `<div class="seg" role="tablist"><button data-stab="flash" class="${SES.tab === 'flash' ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${SES.tab === 'ancrage' ? 'on' : ''}">Session ancrage</button><button data-stab="tutoF" class="${SES.tab === 'tutoF' ? 'on' : ''}">Flash tutorat</button><button data-stab="tuto" class="${SES.tab === 'tuto' ? 'on' : ''}">Ancrage tutorat</button>${anStrict() ? `<button data-stab="noires" class="${SES.tab === 'noires' ? 'on' : ''}">Mes bêtes noires</button>` : ''}</div>`;
+const sesTabs = () => `<div class="seg" role="tablist"><button data-stab="flash" class="${SES.tab === 'flash' ? 'on' : ''}">Session flash</button><button data-stab="ancrage" class="${SES.tab === 'ancrage' ? 'on' : ''}">Session ancrage</button><button data-stab="tutoF" class="${SES.tab === 'tutoF' ? 'on' : ''}">Flash tutorat</button><button data-stab="tuto" class="${SES.tab === 'tuto' ? 'on' : ''}">Ancrage tutorat</button><button data-stab="exos" class="${SES.tab === 'exos' ? 'on' : ''}">Exos types</button>${anStrict() ? `<button data-stab="noires" class="${SES.tab === 'noires' ? 'on' : ''}">Mes bêtes noires</button>` : ''}</div>`;
 function bindSesTabs(re) { app.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { SES.tab = b.dataset.stab; store.set('sesTab', SES.tab); re(); }); }
+/* onglet « Exos types » : les types d'exercices des annales de l'UE, classés par nombre d'annales où ils sont tombés.
+   Type = chapitre du classement BDQCM quand il existe, sinon thème écrit dans le titre de la question (section). */
+function exosTypes(u, calcOnly) {
+  const B = (window.BDQ || {})[u], exams = BASE.filter(e => !e.bank && ueOf(e) === u), T = {};
+  exams.forEach(e => e.questions.forEach((q, k) => {
+    if (!scorable(q) || (calcOnly && !isCalc(q))) return;
+    const m = B && B.q[e.id + '#' + k], name = m ? m[1] : q.theme || (q.section || '').trim() || 'Autres';
+    const t = T[name] = T[name] || { name, mat: m ? m[0] : '', ex: new Set(), refs: [] }; t.ex.add(e.id); t.refs.push([e.id, k]);
+  }));
+  return { n: exams.length, types: Object.values(T).sort((a, b) => b.ex.size - a.ex.size || b.refs.length - a.refs.length || a.name.localeCompare(b.name, 'fr')) };
+}
+function exosHome() {
+  const calc = store.get('exosCalc', true), { n, types } = exosTypes(ue, calc), qres = store.get('qres', {});
+  const seg = (name, cur, opts) => `<div class="seg sm" role="group">${opts.map(([v, l]) => `<button data-${name}="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const hasAnn = u => BASE.some(e => !e.bank && ueOf(e) === u);
+  app.innerHTML = `<div class="home wrap">
+    <nav class="uepick" aria-label="Choisir l’UE">${UES.filter(hasAnn).map(u => `<button class="${u === ue ? 'on' : ''}" data-sue="${esc(u)}" aria-pressed="${u === ue}"><i class="dot"></i><b>${esc(u)}</b></button>`).join('')}</nav>
+    <div class="hero"><span class="eyebrow">Sessions</span><h2>Exos <em>types</em></h2>
+      <p>Les types d’exercices des annales de l’UE, du plus fréquent au moins fréquent : pour chaque type, le nombre d’annales où il est tombé. Touchez « S’entraîner » pour faire toutes les questions de ce type, ou « Ancrer » pour une session ancrage.</p></div>
+    ${sesTabs()}
+    <section class="group"><h3>Réglages</h3><div class="bdqopts"><div><span class="note-src">Questions</span>${seg('xc', calc ? 1 : 0, [[1, 'Exercices de calcul'], [0, 'Toutes les questions']])}</div></div></section>
+    ${types.length ? `<section class="group"><h3>${types.length} type${types.length > 1 ? 's' : ''} · ${n} annale${n > 1 ? 's' : ''} en ${esc(ue)}</h3><div class="cards">${types.map((t, i) => { const done = t.refs.filter(([e, k]) => qres[e + '#' + k]).length, ok = t.refs.filter(([e, k]) => (qres[e + '#' + k] || {}).p >= 1).length; return `<div class="exam bankcard">
+        <span class="t">${esc(t.name)}</span>
+        <span class="m"><span>Tombé dans <b>${t.ex.size}</b> annale${t.ex.size > 1 ? 's' : ''} sur ${n}</span><span>${t.refs.length} question${t.refs.length > 1 ? 's' : ''} · ${ok} réussie${ok > 1 ? 's' : ''}</span></span>
+        <div class="bar"><i style="width:${n ? t.ex.size / n * 100 : 0}%"></i></div>
+        <div class="bankact"><button class="btn blue sm" data-xgo="${i}">S’entraîner</button><button class="btn ghost sm" data-xan="${i}">Ancrer</button></div>
+      </div>`; }).join('')}</div></section>` : `<p class="note-src">${calc ? 'Aucun exercice de calcul repéré dans les annales de cette UE : essayez « Toutes les questions ».' : 'Pas encore d’annales pour cette UE.'}</p>`}
+  </div>`;
+  const re = () => { const y = window.scrollY; sesHome(); window.scrollTo(0, y); };
+  app.querySelectorAll('[data-sue]').forEach(b => b.onclick = () => { ue = b.dataset.sue; store.set('ue', ue); sesHome(); });
+  bindSesTabs(re);
+  app.querySelectorAll('[data-xc]').forEach(b => b.onclick = () => { store.set('exosCalc', b.dataset.xc === '1'); re(); });
+  app.querySelectorAll('[data-xgo]').forEach(b => b.onclick = () => { const t = types[+b.dataset.xgo]; startList(`Exos types · ${t.name} · ${ue}`, shuffle(t.refs.slice())); });
+  app.querySelectorAll('[data-xan]').forEach(b => b.onclick = () => {
+    const t = types[+b.dataset.xan], saved = store.get('ancrage', null), busy = saved && saved.items.some(x => x.n < AN_GOAL);
+    const start = () => { AN = { ue, title: `Ancrage · ${t.name} · ${ue}`, items: shuffle(t.refs.slice()).slice(0, 20).map(r => ({ e: r[0], k: r[1], n: 0 })), cur: 0, last: -1, t0: Date.now() }; anSave(); anRender(); };
+    busy ? confirmBox('Remplacer la session en cours ?', 'La session d’ancrage en cours sera remplacée.', 'Remplacer', start) : start();
+  });
+  window.scrollTo(0, 0);
+}
 /* onglet « Ancrage tutorat » : session d'ancrage (mêmes règles) uniquement sur les banques de QCM du tutorat, chapitres cochés à part */
 function tutoHome(flash) {
   const docs = BASE.filter(e => e.bank && ueOf(e) === ue).sort((a, b) => a.title.localeCompare(b.title, 'fr', { numeric: true }));
