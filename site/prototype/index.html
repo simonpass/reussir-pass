@@ -315,9 +315,35 @@ section { padding: 72px 0 8px; }
 .facts { margin-top: 10px; }
 .faq { display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px; }
 @media (max-width: 760px) { .faq { grid-template-columns: 1fr; } }
+/* ===== animations v2 ===== */
+.progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--blue), var(--red)); z-index: 50; }
+.heroshot { transform-style: preserve-3d; transition: transform .25s ease-out; will-change: transform; }
+.heroshot img { transition: transform .25s ease-out; }
+@keyframes floatY { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+.heroshot.idle { animation: up .9s .2s cubic-bezier(.2,.8,.2,1) both, floatY 7s 1.4s ease-in-out infinite; }
+.w { display: inline-block; opacity: 0; transform: translateY(.45em); filter: blur(4px); transition: opacity .6s cubic-bezier(.2,.8,.2,1), transform .6s cubic-bezier(.2,.8,.2,1), filter .6s; }
+.sec-h.in .w { opacity: 1; transform: none; filter: none; }
+.shot { transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+.shot.rv { opacity: 0; transform: translateY(24px) scale(.96); }
+.shot.rv.in { opacity: 1; transform: none; }
+.shot .frame { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+@media (hover: hover) { .shot:hover .frame { transform: translateY(-6px) rotate(-.4deg); box-shadow: 0 36px 60px -34px rgba(0,0,0,.55); } }
+.all li { opacity: 0; transform: translateX(-10px); transition: opacity .45s, transform .45s; }
+.all li::before { display: inline-block; transform: scale(0); transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+.all > div.in li { opacity: 1; transform: none; }
+.all > div.in li::before { transform: scale(1); }
+.all > div.in li:nth-child(2), .all > div.in li:nth-child(2)::before { transition-delay: .12s; }
+.all > div.in li:nth-child(3), .all > div.in li:nth-child(3)::before { transition-delay: .24s; }
+.plan { transition: transform .3s cubic-bezier(.2,.8,.2,1), background .2s; }
+@media (hover: hover) { .plan:hover { transform: translateY(-6px); } }
+.faq details[open] p { animation: up .4s ease-out both; }
+.btn { transition: transform .2s cubic-bezier(.34,1.56,.64,1), background .15s, color .15s, box-shadow .2s; }
+.btn:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { .progress { display: none; } .w, .all li, .shot.rv { opacity: 1 !important; transform: none !important; filter: none !important; } .heroshot.idle { animation: none; } }
 </style>
 </head>
 <body>
+<div class="progress" aria-hidden="true"></div>
 <div class="proto">PROTOTYPE · DÉMONSTRATION · AUCUN PAIEMENT RÉEL</div>
 <header><div class="wrap">
   <a class="logo" href="#">Réussir <i>PASS</i></a>
@@ -334,7 +360,7 @@ section { padding: 72px 0 8px; }
       <div class="cta"><button class="btn ink" data-plan="essai">Essayer 7 jours, gratuit</button><a class="btn" href="#offres">Voir les prix</a></div>
       <div class="note">Sans carte bancaire pour l’essai · sur iPad, téléphone et ordinateur</div>
     </div>
-    <div class="heroshot"><img src="img/appli-ancrage.webp" alt="Une session d’ancrage dans l’appli" width="1180" height="820"></div>
+    <div class="heroshot idle"><img src="img/appli-ancrage.webp" alt="Une session d’ancrage dans l’appli" width="1180" height="820"></div>
   </div>
 
   <div class="wrap"><div class="facts rv">
@@ -453,6 +479,27 @@ document.querySelectorAll('.btn.ink').forEach(b => b.addEventListener('pointermo
 let m3dLoaded = false;
 const loadM3D = () => { if (m3dLoaded) return; m3dLoaded = true; const sc = document.createElement('script'); sc.src = '../model3d.js'; sc.onload = () => { const host = document.getElementById('m3dDemo'); host.innerHTML = ''; if (window.Model3D) window.Model3D.open(host, 2, { esc: t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])), stage: 3 }); }; sc.onerror = () => { document.getElementById('m3dDemo').textContent = 'Le modèle 3D est disponible dans l’appli.'; }; document.body.appendChild(sc); };
 const dio = 'IntersectionObserver' in window ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { loadM3D(); dio.disconnect(); } }, { rootMargin: '300px' }) : null; if (dio) dio.observe(document.getElementById('demo3d')); else loadM3D(); window.addEventListener('load', () => setTimeout(loadM3D, 3500));
+/* titres mot à mot */
+document.querySelectorAll('.sec-h h2').forEach(h => {
+  let i = 0;
+  const walk = node => [...node.childNodes].forEach(n => {
+    if (n.nodeType === 3) { const f = document.createDocumentFragment(); n.textContent.split(/(\s+)/).forEach(t => { if (!t) return; if (/^\s+$/.test(t)) f.appendChild(document.createTextNode(t)); else { const sp = document.createElement('span'); sp.className = 'w'; sp.style.transitionDelay = (i++ * 70) + 'ms'; sp.textContent = t; f.appendChild(sp); } }); n.replaceWith(f); }
+    else if (n.nodeType === 1) walk(n);
+  });
+  walk(h);
+});
+/* barre de progression de lecture */
+const bar = document.querySelector('.progress');
+const onScroll = () => { const m = document.documentElement.scrollHeight - innerHeight; bar.style.transform = 'scaleX(' + (m > 0 ? scrollY / m : 0) + ')'; };
+addEventListener('scroll', onScroll, { passive: true }); onScroll();
+/* capture du héros qui suit le pointeur */
+const hs = document.querySelector('.heroshot');
+if (hs && matchMedia('(hover: hover)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  hs.parentElement.addEventListener('pointermove', e => { const r = hs.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; hs.classList.remove('idle'); hs.style.transform = 'perspective(1100px) rotateY(' + (x * 8) + 'deg) rotateX(' + (-y * 6) + 'deg)'; });
+  hs.parentElement.addEventListener('pointerleave', () => { hs.style.transform = ''; hs.classList.add('idle'); });
+}
+/* familles « tout inclus » observées une à une */
+document.querySelectorAll('.all > div').forEach(d => d.classList.add('rv'));
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); if (e.target.classList.contains('facts')) e.target.querySelectorAll('b').forEach(count); io.unobserve(e.target); } }), { threshold: .12 }) : null;
 document.querySelectorAll('.rv').forEach(el => io ? io.observe(el) : el.classList.add('in'));
 
