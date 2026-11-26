@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-title" content="Annales PASS">
 <title>Annales PASS</title>
+<script>
+/* nouveaux visiteurs (aucune progression ni compte sur cet appareil) : page de vente d abord */
+(function () { try {
+  var q = location.search;
+  if (/[?&](compte|app)=/.test(q) || location.hash.indexOf("#transfert=") === 0) { localStorage.setItem("ue4:visite", "1"); return; }
+  for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && (k.indexOf("ue4:") === 0 || k === "pass-compte" || k.indexOf("sb-") === 0)) return; }
+  location.replace("prototype/");
+} catch (e) {} })();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,500&display=swap">
