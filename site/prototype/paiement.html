@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Paiement — Réussir PASS</title>
 <meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%231d1b18%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-family=%27Georgia,serif%27 font-size=%2742%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fbf9f4%27%3ER%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
@@ -44,6 +45,12 @@ aside .box { position: sticky; top: 20px; }
 .ok h1 { font-size: 42px; }
 .btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1.5px solid var(--ink); color: var(--ink); text-decoration: none; font-weight: 600; }
 .btn.ink { background: var(--ink); color: var(--paper); }
+.parr { margin-top: 10px; width: min(520px, 100%); text-align: left; background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 20px; display: grid; gap: 10px; }
+.parr h2 { font-family: var(--serif); font-size: 21px; margin: 0; }
+.parr .cp { display: flex; gap: 8px; } .parr .cp input { min-width: 0; font-family: var(--mono); font-size: 13.5px; }
+.parr .cp button { font: inherit; font-weight: 600; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); cursor: pointer; }
+footer { border-top: 1px solid var(--rule); padding: 24px 22px 44px; font-size: 13.5px; color: var(--soft); text-align: center; } footer a { color: var(--soft); margin: 0 6px; }
+html, body { overflow-x: clip; }
 @media (max-width: 820px) { main { grid-template-columns: 1fr; } aside { order: -1; } aside .box { position: static; } }
 </style>
 </head>
@@ -67,7 +74,7 @@ aside .box { position: sticky; top: 20px; }
         <div class="row2" style="margin-top:12px"><label>Expiration<input disabled placeholder="MM / AA"></label><label>Code de sécurité<input disabled placeholder="CVC"></label></div>
       </div>
       <p class="demo">Démonstration : dans la version réelle, ce bloc est fourni par le prestataire de paiement (Stripe). Les numéros de carte ne passent jamais par le site.</p>
-      <label class="chk"><input type="checkbox" checked> J’accepte les conditions générales de vente et je demande l’accès immédiat au service.</label>
+      <label class="chk"><input type="checkbox" checked> J’accepte les <a href="cgv.html" target="_blank" style="color:var(--blue)">conditions générales de vente</a> et je demande l’accès immédiat au service.</label>
       <button class="pay" id="pay">Payer</button>
     </div>
   </div>
@@ -90,9 +97,16 @@ aside .box { position: sticky; top: 20px; }
   <span style="font-family:var(--mono);font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.05em">3 · Confirmation</span>
   <h1>Bienvenue !</h1>
   <p style="color:var(--soft);max-width:46ch" id="donetxt"></p>
-  <a class="btn ink" href="../">Ouvrir l’appli</a>
+  <a class="btn ink" href="../?app=1">Ouvrir l’appli</a>
+  <a class="btn" id="abo" href="abonnement.html">Gérer mon abonnement</a>
   <a class="btn" href="./">Retour à la présentation</a>
+  <div class="parr">
+    <h2>Invite un ami : il a 7 jours offerts, toi aussi</h2>
+    <div class="cp"><input id="plink" readonly aria-label="Lien de parrainage"><button id="pcopy">Copier</button></div>
+    <span class="demo">Démonstration : ce lien est généré sur ton appareil et n’est relié à aucun compte.</span>
+  </div>
 </div>
+<footer><a href="mentions-legales.html">Mentions légales</a>·<a href="cgv.html">CGV</a>·<a href="confidentialite.html">Confidentialité</a></footer>
 
 <script>
 const P = { decouverte: ['Découverte', '0 €', '0,00 €', 'Gratuit, sans limite de durée. Passe à une formule payante quand tu veux pour tout débloquer.', false], mensuel: ['Mensuel', '6,99 €', '0,00 €', 'Puis 6,99 € par mois à partir du 8e jour. Résiliable à tout moment.', true], semestre: ['Semestre', '34,00 €', '34,00 €', 'Paiement unique, sans renouvellement automatique.', false], annuel: ['Année PASS', '49,00 €', '49,00 €', 'Paiement unique pour un an, sans renouvellement automatique.', false] };
@@ -101,7 +115,10 @@ let cur = P[q] ? q : 'mensuel';
 const set = k => { cur = k; const p = P[k]; document.getElementById('lbl').textContent = p[0]; document.getElementById('pr').textContent = p[1]; document.getElementById('tot').textContent = p[2]; document.getElementById('note').textContent = p[3]; document.getElementById('trial').hidden = !p[4]; document.getElementById('pay').textContent = k === 'decouverte' ? 'Créer mon compte gratuit' : p[4] ? 'Commencer l’essai gratuit' : 'Payer ' + p[2]; document.querySelectorAll('.box')[1].querySelectorAll('.methods, #carte, .demo').forEach(x => x.hidden = k === 'decouverte'); document.querySelector(`input[value="${k}"]`).checked = true; };
 document.querySelectorAll('#plans input').forEach(i => i.onchange = () => set(i.value));
 document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { document.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x === b)); document.getElementById('carte').hidden = b.dataset.m !== 'carte'; });
-document.getElementById('pay').onclick = () => { if (cur === 'decouverte') { location.href = '../?compte=signup'; return; } document.getElementById('checkout').hidden = true; document.getElementById('done').hidden = false; document.getElementById('donetxt').textContent = `Ta formule ${P[cur][0]} est active (simulation). Un reçu serait envoyé par e-mail, et ton compte serait débloqué immédiatement.`; window.scrollTo(0, 0); };
+document.getElementById('pay').onclick = () => { if (cur === 'decouverte') { location.href = '../?compte=signup'; return; } document.getElementById('checkout').hidden = true; document.getElementById('done').hidden = false; document.getElementById('donetxt').textContent = `Ta formule ${P[cur][0]} est active (simulation). Un reçu serait envoyé par e-mail, et ton compte serait débloqué immédiatement.`; document.getElementById('abo').href = 'abonnement.html?plan=' + cur; window.scrollTo(0, 0); };
+const code = 'PASS-' + Array.from(crypto.getRandomValues(new Uint8Array(4)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+document.getElementById('plink').value = 'https://reussir-pass.fr/prototype/?parrain=' + code;
+document.getElementById('pcopy').onclick = async () => { const b = document.getElementById('pcopy'), i = document.getElementById('plink'); try { await navigator.clipboard.writeText(i.value); } catch { i.select(); document.execCommand('copy'); } b.textContent = 'Copié ✓'; setTimeout(() => b.textContent = 'Copier', 1800); };
 set(cur);
 </script>
 </body>
