@@ -33,6 +33,7 @@
 ## Prototype commercial (25/11)
 - Page vitrine de démonstration : `site/prototype/index.html` → https://reussir-pass.fr/prototype/ (noindex, aucun paiement réel). Fonctions, 3 offres de démo (0 € / 6,99 €/mois / 49 €/an), FAQ.
 - 25/11 : captures et démo jouable sur /prototype/ (4 captures webp dans `site/prototype/img/`, section « Essaie maintenant » avec 5 vraies questions des annales codées en dur).
+- 26/11 (branche `feature/prototype-complet`, non poussée) : pages `mentions-legales.html`, `cgv.html`, `confidentialite.html` (brouillons à faire relire, champs « [À compléter : …] »), `abonnement.html` (simulée), parrainage simulé après paiement + FAQ, meta OG/Twitter, favicon « R » ; styles communs `legal.css`.
 - Avant toute vente : accord écrit du Tutorat Lyon-Est sur les annales et banques (sinon contenu propre), micro-entreprise, CGV/mentions légales/RGPD, paiement (Stripe) et accès réservés aux abonnés dans l’appli.
 
 ## Comptes (Supabase, projet « pass-facile », réf. uwliytqqfbgxvnnqaadl, organisation pass-facile du compte Supabase de Simon)

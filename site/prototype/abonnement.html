@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon abonnement — Réussir PASS</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%231d1b18%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-family=%27Georgia,serif%27 font-size=%2742%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fbf9f4%27%3ER%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="legal.css">
+</head>
+<body>
+<div class="draft">Prototype · page de démonstration · aucune donnée réelle</div>
+<header><div class="w"><a class="logo" href="./">Réussir <i>PASS</i></a><nav><a href="./">← Retour</a></nav></div></header>
+<main>
+<h1>Mon abonnement</h1>
+<div class="maj">Démonstration</div>
+
+<p class="demo">Démonstration : cette page simule l’espace abonné. Aucune donnée réelle, aucun prélèvement.</p>
+<div class="box"><div class="maj" style="margin:0 0 6px">Formule en cours</div>
+<h2 style="border:0;margin:0;padding:0" id="nom">Mensuel</h2>
+<p id="detail" style="margin:6px 0 16px"></p>
+<div style="display:flex;flex-wrap:wrap;gap:10px"><a class="btn" href="paiement.html">Changer de formule</a><button class="btn red" id="resil">Résilier</button></div>
+<div id="confirm" hidden style="margin-top:18px" class="demo"></div></div>
+<h2>Factures</h2>
+<p style="font-size:14px;color:var(--soft)">Factures fictives, à titre d’<b>exemple</b>.</p>
+<div style="overflow-x:auto"><table id="fact"><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>N°</th></tr></table></div>
+<p style="margin-top:30px"><a href="../">Ouvrir l’appli</a> · <a href="cgv.html">Conditions générales de vente</a></p>
+</main>
+<footer><a href="./">Présentation</a>·<a href="mentions-legales.html">Mentions légales</a>·<a href="cgv.html">CGV</a>·<a href="confidentialite.html">Confidentialité</a></footer>
+<script>
+const P = { mensuel: ['Mensuel', 6.99], semestre: ['Semestre', 34], annuel: ['Année PASS', 49], decouverte: ['Découverte', 0] };
+const q = new URLSearchParams(location.search).get('plan');
+const k = P[q] ? q : 'mensuel';
+const f = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+const eur = n => n.toFixed(2).replace('.', ',') + ' €';
+const now = new Date(), add = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const next = k === 'mensuel' ? add(now, 7) : k === 'semestre' ? add(now, 182) : add(now, 365);
+document.getElementById('nom').textContent = P[k][0];
+document.getElementById('detail').textContent = k === 'decouverte' ? 'Gratuite, sans échéance.' : k === 'mensuel' ? `Essai gratuit en cours. Prochaine échéance : ${f(next)}, ${eur(P[k][1])}. Résiliable à tout moment.` : `Payée une fois. Accès jusqu’au ${f(next)}, sans renouvellement automatique.`;
+const rb = document.getElementById('resil');
+rb.hidden = k !== 'mensuel';
+rb.onclick = () => {
+  if (!confirm('Résilier l’abonnement mensuel ? (simulation)')) return;
+  const c = document.getElementById('confirm'); c.hidden = false;
+  c.textContent = `Résiliation enregistrée (simulation). Aucun prélèvement ne sera effectué ; ton accès complet reste ouvert jusqu’au ${f(next)}. Un e-mail de confirmation serait envoyé.`;
+  rb.hidden = true; document.getElementById('detail').textContent = `Résilié. Accès jusqu’au ${f(next)}.`;
+};
+const rows = k === 'decouverte' ? [] : k === 'mensuel' ? [[now, 'Mensuel · essai gratuit 7 jours', 0]] : [[now, P[k][0], P[k][1]]];
+const t = document.getElementById('fact');
+rows.forEach(([d, l, m], i) => { const r = t.insertRow(); r.innerHTML = `<td>${f(d)}</td><td>${l} <small>(exemple)</small></td><td>${eur(m)}</td><td>EXEMPLE-${String(i + 1).padStart(3, '0')}</td>`; });
+if (!rows.length) t.insertRow().innerHTML = '<td colspan="4">Aucune facture (formule gratuite).</td>';
+</script>
+</body>
+</html>
